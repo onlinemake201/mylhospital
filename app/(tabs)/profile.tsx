@@ -32,7 +32,7 @@ export default function ProfileScreen() {
     );
   }
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     Alert.alert(
       'Abmelden',
       'Möchten Sie sich wirklich abmelden?',
@@ -47,8 +47,8 @@ export default function ProfileScreen() {
               const result = await logout();
               console.log('Profile: Logout result:', result);
               if (result.success) {
-                console.log('Profile: Logout successful, navigating to index...');
-                router.replace('/');
+                console.log('Profile: Logout successful, navigating to login...');
+                router.replace('/login');
               } else {
                 Alert.alert('Fehler', result.error || 'Abmeldung fehlgeschlagen');
               }
