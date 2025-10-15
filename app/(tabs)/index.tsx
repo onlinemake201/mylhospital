@@ -6,10 +6,12 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useHospital } from '@/contexts/HospitalContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function DashboardScreen() {
   const { user, logout } = useAuth();
   const { patients, appointments, tasks, notifications, medications } = useHospital();
+  const { t } = useLanguage();
   const router = useRouter();
   const [refreshKey, setRefreshKey] = React.useState(0);
 
@@ -22,12 +24,12 @@ export default function DashboardScreen() {
 
   const handleLogout = async () => {
     Alert.alert(
-      'Abmelden',
-      'Möchten Sie sich wirklich abmelden?',
+      t.auth.logout,
+      t.auth.logoutConfirm,
       [
-        { text: 'Abbrechen', style: 'cancel' },
+        { text: t.common.cancel, style: 'cancel' },
         {
-          text: 'Abmelden',
+          text: t.auth.logout,
           style: 'destructive',
           onPress: async () => {
             console.log('Dashboard: Logout initiated');
@@ -37,7 +39,7 @@ export default function DashboardScreen() {
               console.log('Dashboard: Navigating to index (will redirect to login)');
               router.replace('/');
             } else {
-              Alert.alert('Fehler', 'Abmeldung fehlgeschlagen');
+              Alert.alert(t.common.error, t.auth.logoutError);
             }
           },
         },
@@ -48,33 +50,33 @@ export default function DashboardScreen() {
   const stats = React.useMemo(() => [
     {
       icon: Users,
-      label: 'Total Patients',
+      label: t.dashboard.totalPatients,
       value: patients.length,
       color: '#007AFF',
       bgColor: '#E5F3FF',
     },
     {
       icon: Calendar,
-      label: "Today's Appointments",
+      label: t.dashboard.todaysAppointments,
       value: appointments.filter(a => a.date === new Date().toISOString().split('T')[0]).length,
       color: '#34C759',
       bgColor: '#D1F4E0',
     },
     {
       icon: Activity,
-      label: 'Active Medications',
+      label: t.dashboard.activeMedications,
       value: medications.filter(m => m.status === 'active').length,
       color: '#FF9500',
       bgColor: '#FFF4E5',
     },
     {
       icon: AlertTriangle,
-      label: 'Pending Tasks',
+      label: t.dashboard.pendingTasks,
       value: tasks.filter(t => t.status === 'pending').length,
       color: '#FF3B30',
       bgColor: '#FFE5E5',
     },
-  ], [patients, appointments, medications, tasks, refreshKey]);
+  ], [patients, appointments, medications, tasks, refreshKey, t]);
 
   const upcomingAppointments = appointments
     .filter(a => a.status === 'scheduled' || a.status === 'confirmed')
@@ -86,7 +88,7 @@ export default function DashboardScreen() {
     <>
       <Stack.Screen
         options={{
-          title: 'Dashboard',
+          title: t.dashboard.title,
           headerLargeTitle: true,
           headerRight: () => (
             <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
@@ -97,7 +99,7 @@ export default function DashboardScreen() {
       />
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.greeting}>Welcome back,</Text>
+          <Text style={styles.greeting}>{t.dashboard.welcomeBack}</Text>
           <Text style={styles.name}>{user?.name}</Text>
           <Badge label={user?.role || 'User'} variant="info" style={styles.roleBadge} />
         </View>
@@ -116,9 +118,9 @@ export default function DashboardScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Upcoming Appointments</Text>
+            <Text style={styles.sectionTitle}>{t.dashboard.upcomingAppointments}</Text>
             <TouchableOpacity>
-              <Text style={styles.seeAll}>See All</Text>
+              <Text style={styles.seeAll}>{t.dashboard.seeAll}</Text>
             </TouchableOpacity>
           </View>
           {upcomingAppointments.map(appointment => (
@@ -152,9 +154,9 @@ export default function DashboardScreen() {
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Pending Tasks</Text>
+            <Text style={styles.sectionTitle}>{t.dashboard.pendingTasksSection}</Text>
             <TouchableOpacity>
-              <Text style={styles.seeAll}>See All</Text>
+              <Text style={styles.seeAll}>{t.dashboard.seeAll}</Text>
             </TouchableOpacity>
           </View>
           {pendingTasks.map(task => (
