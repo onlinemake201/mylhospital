@@ -93,6 +93,12 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <UserCircle size={24} color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="patient-details"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }
