@@ -226,4 +226,5 @@ export interface HospitalSettings {
   logo?: string;
   website?: string;
   taxId?: string;
+  language?: 'de' | 'en';
 }

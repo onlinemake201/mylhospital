@@ -26,7 +26,7 @@ export default function AdminScreen() {
   const { user: currentUser } = useAuth();
   const { users, createUser, updateUser, deleteUser, toggleUserStatus, resetPassword, isLoading } = useUserManagement();
   const { hospitalSettings, updateHospitalSettings } = useHospital();
-  const { language, changeLanguage, t } = useLanguage();
+  const { language, t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -417,7 +417,7 @@ export default function AdminScreen() {
                     styles.languageOption,
                     language === 'de' && styles.languageOptionActive,
                   ]}
-                  onPress={() => changeLanguage('de')}
+                  onPress={() => updateHospitalSettings({ language: 'de' })}
                 >
                   <View style={styles.languageContent}>
                     <Text style={styles.languageFlag}>🇩🇪</Text>
@@ -443,7 +443,7 @@ export default function AdminScreen() {
                     styles.languageOption,
                     language === 'en' && styles.languageOptionActive,
                   ]}
-                  onPress={() => changeLanguage('en')}
+                  onPress={() => updateHospitalSettings({ language: 'en' })}
                 >
                   <View style={styles.languageContent}>
                     <Text style={styles.languageFlag}>🇬🇧</Text>

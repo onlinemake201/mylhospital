@@ -185,6 +185,7 @@ export const [HospitalProvider, useHospital] = createContextHook(() => {
     email: 'info@klinikum-musterstadt.de',
     website: 'www.klinikum-musterstadt.de',
     taxId: 'DE123456789',
+    language: 'de',
   });
 
   useEffect(() => {
