@@ -8,9 +8,10 @@ import {
   Modal,
   Alert,
   Platform,
+  TextInput,
 } from 'react-native';
 import { Stack, Redirect } from 'expo-router';
-import { Plus, FileText, Download, Eye, Trash2, X, TrendingUp, TrendingDown, DollarSign, Clock } from 'lucide-react-native';
+import { Plus, FileText, Download, Eye, Trash2, X, TrendingUp, TrendingDown, DollarSign, Clock, Search } from 'lucide-react-native';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { Card } from '@/components/ui/Card';
@@ -29,13 +30,26 @@ export default function InvoicesScreen() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedPatientId, setSelectedPatientId] = useState('');
   const [selectedMedications, setSelectedMedications] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const filteredInvoices = useMemo(() => {
-    if (selectedStatus === 'all') {
-      return invoices;
+    let filtered = invoices;
+
+    if (selectedStatus !== 'all') {
+      filtered = filtered.filter(inv => inv.status === selectedStatus);
     }
-    return invoices.filter(inv => inv.status === selectedStatus);
-  }, [invoices, selectedStatus]);
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(inv => {
+        const matchesInvoiceId = inv.id.toLowerCase().includes(query);
+        const matchesPatientName = inv.patientName.toLowerCase().includes(query);
+        return matchesInvoiceId || matchesPatientName;
+      });
+    }
+
+    return filtered;
+  }, [invoices, selectedStatus, searchQuery]);
 
   const monthlyStats = useMemo(() => {
     const now = new Date();
@@ -508,6 +522,29 @@ export default function InvoicesScreen() {
           ))}
           </ScrollView>
 
+          <View style={styles.searchContainer}>
+            <View style={styles.searchInputWrapper}>
+              <Search size={18} color="#8E8E93" style={styles.searchIcon} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Nach Patient oder Rechnungsnummer suchen..."
+                placeholderTextColor="#C7C7CC"
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity
+                  onPress={() => setSearchQuery('')}
+                  style={styles.clearButton}
+                >
+                  <X size={16} color="#8E8E93" />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+
           <View style={styles.listContainer}>
           <Text style={styles.resultCount}>
             {filteredInvoices.length} {filteredInvoices.length === 1 ? 'Rechnung' : 'Rechnungen'}
@@ -632,9 +669,14 @@ export default function InvoicesScreen() {
           {filteredInvoices.length === 0 && (
             <View style={styles.emptyState}>
               <FileText size={64} color="#C7C7CC" />
-              <Text style={styles.emptyText}>Keine Rechnungen vorhanden</Text>
+              <Text style={styles.emptyText}>
+                {searchQuery.trim() ? 'Keine Rechnungen gefunden' : 'Keine Rechnungen vorhanden'}
+              </Text>
               <Text style={styles.emptySubtext}>
-                Erstellen Sie eine neue Rechnung für Medikamente
+                {searchQuery.trim() 
+                  ? 'Versuchen Sie eine andere Suche' 
+                  : 'Erstellen Sie eine neue Rechnung für Medikamente'
+                }
               </Text>
             </View>
           )}
@@ -863,6 +905,34 @@ const styles = StyleSheet.create({
   },
   tabBadgeTextActive: {
     color: '#FFFFFF',
+  },
+  searchContainer: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5EA',
+  },
+  searchInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F2F2F7',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    height: 44,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#000000',
+    paddingVertical: 0,
+  },
+  clearButton: {
+    padding: 4,
+    marginLeft: 4,
   },
   listContainer: {
     padding: 16,
