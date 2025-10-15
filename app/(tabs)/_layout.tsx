@@ -75,7 +75,7 @@ export default function TabLayout() {
         options={{
           title: "Invoices",
           tabBarIcon: ({ color }) => <FileText size={24} color={color} />,
-          href: null,
+          href: isAdmin ? undefined : null,
         }}
       />
       <Tabs.Screen
