@@ -11,7 +11,7 @@ import {
   TextInput,
 } from 'react-native';
 import { Stack, Redirect } from 'expo-router';
-import { Plus, FileText, Download, Eye, Trash2, X, TrendingUp, TrendingDown, DollarSign, Clock, Search } from 'lucide-react-native';
+import { Plus, FileText, Download, Eye, Trash2, X, TrendingUp, TrendingDown, DollarSign, Clock, Search, ChevronDown, ChevronRight, User } from 'lucide-react-native';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { Card } from '@/components/ui/Card';
@@ -27,6 +27,7 @@ export default function InvoicesScreen() {
   const { patients, medications, invoices, hospitalSettings, updateInvoice, deleteInvoice } = useHospital();
   const [selectedStatus, setSelectedStatus] = useState<InvoiceStatus | 'all'>('all');
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [expandedPatients, setExpandedPatients] = useState<Set<string>>(new Set());
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedPatientId, setSelectedPatientId] = useState('');
   const [selectedMedications, setSelectedMedications] = useState<string[]>([]);
@@ -50,6 +51,28 @@ export default function InvoicesScreen() {
 
     return filtered;
   }, [invoices, selectedStatus, searchQuery]);
+
+  const groupedInvoices = useMemo(() => {
+    const groups = new Map<string, Invoice[]>();
+    
+    filteredInvoices.forEach(invoice => {
+      const key = `${invoice.patientId}-${invoice.patientName}`;
+      if (!groups.has(key)) {
+        groups.set(key, []);
+      }
+      groups.get(key)!.push(invoice);
+    });
+
+    return Array.from(groups.entries())
+      .map(([key, invoices]) => ({
+        patientId: key.split('-')[0],
+        patientName: key.substring(key.indexOf('-') + 1),
+        invoices: invoices.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+        totalAmount: invoices.reduce((sum, inv) => sum + inv.total, 0),
+        unpaidAmount: invoices.filter(inv => inv.status !== 'paid' && inv.status !== 'cancelled').reduce((sum, inv) => sum + inv.total, 0),
+      }))
+      .sort((a, b) => a.patientName.localeCompare(b.patientName));
+  }, [filteredInvoices]);
 
   const monthlyStats = useMemo(() => {
     const now = new Date();
@@ -547,10 +570,51 @@ export default function InvoicesScreen() {
 
           <View style={styles.listContainer}>
           <Text style={styles.resultCount}>
-            {filteredInvoices.length} {filteredInvoices.length === 1 ? 'Rechnung' : 'Rechnungen'}
+            {filteredInvoices.length} {filteredInvoices.length === 1 ? 'Rechnung' : 'Rechnungen'} • {groupedInvoices.length} {groupedInvoices.length === 1 ? 'Patient' : 'Patienten'}
           </Text>
 
-          {filteredInvoices.map(invoice => (
+          {groupedInvoices.map(group => (
+            <View key={group.patientId} style={styles.patientGroup}>
+              <TouchableOpacity
+                style={styles.patientGroupHeader}
+                onPress={() => {
+                  const newExpanded = new Set(expandedPatients);
+                  if (newExpanded.has(group.patientId)) {
+                    newExpanded.delete(group.patientId);
+                  } else {
+                    newExpanded.add(group.patientId);
+                  }
+                  setExpandedPatients(newExpanded);
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={styles.patientGroupHeaderLeft}>
+                  <View style={styles.patientAvatarContainer}>
+                    <User size={20} color="#007AFF" />
+                  </View>
+                  <View style={styles.patientGroupInfo}>
+                    <Text style={styles.patientGroupName}>{group.patientName}</Text>
+                    <Text style={styles.patientGroupStats}>
+                      {group.invoices.length} {group.invoices.length === 1 ? 'Rechnung' : 'Rechnungen'}
+                      {group.unpaidAmount > 0 && (
+                        <Text style={styles.unpaidAmount}> • €{group.unpaidAmount.toFixed(2)} offen</Text>
+                      )}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.patientGroupHeaderRight}>
+                  <Text style={styles.patientGroupTotal}>€{group.totalAmount.toFixed(2)}</Text>
+                  {expandedPatients.has(group.patientId) ? (
+                    <ChevronDown size={20} color="#8E8E93" />
+                  ) : (
+                    <ChevronRight size={20} color="#8E8E93" />
+                  )}
+                </View>
+              </TouchableOpacity>
+
+              {expandedPatients.has(group.patientId) && (
+                <View style={styles.patientInvoicesList}>
+                  {group.invoices.map(invoice => (
             <TouchableOpacity
               key={invoice.id}
               onPress={() => setSelectedInvoice(selectedInvoice?.id === invoice.id ? null : invoice)}
@@ -664,6 +728,10 @@ export default function InvoicesScreen() {
                 )}
               </Card>
             </TouchableOpacity>
+          ))}
+                </View>
+              )}
+            </View>
           ))}
 
           {filteredInvoices.length === 0 && (
@@ -942,8 +1010,73 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
     marginBottom: 12,
   },
+  patientGroup: {
+    marginBottom: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  patientGroupHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#F9F9FB',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5EA',
+  },
+  patientGroupHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 12,
+  },
+  patientAvatarContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#E5F3FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  patientGroupInfo: {
+    flex: 1,
+  },
+  patientGroupName: {
+    fontSize: 17,
+    fontWeight: '600' as const,
+    color: '#000000',
+    marginBottom: 4,
+  },
+  patientGroupStats: {
+    fontSize: 13,
+    color: '#8E8E93',
+  },
+  unpaidAmount: {
+    color: '#FF3B30',
+    fontWeight: '600' as const,
+  },
+  patientGroupHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  patientGroupTotal: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: '#007AFF',
+  },
+  patientInvoicesList: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
   invoiceCard: {
-    marginBottom: 12,
+    marginBottom: 8,
   },
   invoiceCardSelected: {
     borderWidth: 2,
