@@ -10,22 +10,23 @@ import {
   Modal,
   ActivityIndicator,
   Image,
-  Platform,
 } from 'react-native';
 import { Stack } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { UserPlus, Search, MoreVertical, Lock, Trash2, Power, UserCog, Settings, Building2, Upload } from 'lucide-react-native';
+import { UserPlus, Search, MoreVertical, Lock, Trash2, Power, UserCog, Settings, Building2, Upload, Languages } from 'lucide-react-native';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserManagement } from '@/contexts/UserManagementContext';
 import { useHospital } from '@/contexts/HospitalContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { User, UserRole } from '@/types';
 
 export default function AdminScreen() {
   const { user: currentUser } = useAuth();
   const { users, createUser, updateUser, deleteUser, toggleUserStatus, resetPassword, isLoading } = useUserManagement();
   const { hospitalSettings, updateHospitalSettings } = useHospital();
+  const { language, changeLanguage, t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -35,7 +36,7 @@ export default function AdminScreen() {
   const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [selectedRole, setSelectedRole] = useState<UserRole>('doctor');
-  const [activeTab, setActiveTab] = useState<'users' | 'settings'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'settings' | 'language'>('users');
   const [settingsForm, setSettingsForm] = useState({
     name: hospitalSettings.name,
     address: hospitalSettings.address,
@@ -233,7 +234,7 @@ export default function AdminScreen() {
           >
             <UserCog size={20} color={activeTab === 'users' ? '#007AFF' : '#8E8E93'} />
             <Text style={[styles.tabButtonText, activeTab === 'users' && styles.tabButtonTextActive]}>
-              Benutzer
+              {t.admin.users}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -242,7 +243,16 @@ export default function AdminScreen() {
           >
             <Building2 size={20} color={activeTab === 'settings' ? '#007AFF' : '#8E8E93'} />
             <Text style={[styles.tabButtonText, activeTab === 'settings' && styles.tabButtonTextActive]}>
-              Krankenhaus
+              {t.admin.hospital}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tabButton, activeTab === 'language' && styles.tabButtonActive]}
+            onPress={() => setActiveTab('language')}
+          >
+            <Languages size={20} color={activeTab === 'language' ? '#007AFF' : '#8E8E93'} />
+            <Text style={[styles.tabButtonText, activeTab === 'language' && styles.tabButtonTextActive]}>
+              {t.admin.language}
             </Text>
           </TouchableOpacity>
         </View>
@@ -308,7 +318,7 @@ export default function AdminScreen() {
               </ScrollView>
             )}
           </>
-        ) : (
+        ) : activeTab === 'settings' ? (
           <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
             <Card style={styles.settingsCard}>
               <View style={styles.settingsHeader}>
@@ -385,6 +395,75 @@ export default function AdminScreen() {
                   <Text style={styles.infoValue}>{hospitalSettings.taxId}</Text>
                 </View>
               )}
+            </Card>
+          </ScrollView>
+        ) : (
+          <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+            <Card style={styles.settingsCard}>
+              <View style={styles.settingsHeader}>
+                <Languages size={24} color="#007AFF" />
+                <Text style={styles.settingsTitle}>{t.admin.languageSettings}</Text>
+              </View>
+              <Text style={styles.settingsDescription}>
+                {t.admin.selectLanguage}
+              </Text>
+            </Card>
+
+            <Card style={styles.settingsCard}>
+              <Text style={styles.sectionTitle}>{t.admin.language}</Text>
+              <View style={styles.languageOptions}>
+                <TouchableOpacity
+                  style={[
+                    styles.languageOption,
+                    language === 'de' && styles.languageOptionActive,
+                  ]}
+                  onPress={() => changeLanguage('de')}
+                >
+                  <View style={styles.languageContent}>
+                    <Text style={styles.languageFlag}>🇩🇪</Text>
+                    <View style={styles.languageInfo}>
+                      <Text style={[
+                        styles.languageLabel,
+                        language === 'de' && styles.languageLabelActive,
+                      ]}>
+                        {t.admin.german}
+                      </Text>
+                      <Text style={styles.languageSubLabel}>Deutsch</Text>
+                    </View>
+                  </View>
+                  {language === 'de' && (
+                    <View style={styles.checkMark}>
+                      <Text style={styles.checkMarkText}>✓</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.languageOption,
+                    language === 'en' && styles.languageOptionActive,
+                  ]}
+                  onPress={() => changeLanguage('en')}
+                >
+                  <View style={styles.languageContent}>
+                    <Text style={styles.languageFlag}>🇬🇧</Text>
+                    <View style={styles.languageInfo}>
+                      <Text style={[
+                        styles.languageLabel,
+                        language === 'en' && styles.languageLabelActive,
+                      ]}>
+                        {t.admin.english}
+                      </Text>
+                      <Text style={styles.languageSubLabel}>English</Text>
+                    </View>
+                  </View>
+                  {language === 'en' && (
+                    <View style={styles.checkMark}>
+                      <Text style={styles.checkMarkText}>✓</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              </View>
             </Card>
           </ScrollView>
         )}
@@ -1054,5 +1133,59 @@ const styles = StyleSheet.create({
     height: 80,
     textAlignVertical: 'top',
     paddingTop: 12,
+  },
+  languageOptions: {
+    gap: 12,
+  },
+  languageOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    backgroundColor: '#F2F2F7',
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  languageOptionActive: {
+    borderColor: '#007AFF',
+    backgroundColor: '#E5F3FF',
+  },
+  languageContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  languageFlag: {
+    fontSize: 32,
+  },
+  languageInfo: {
+    flexDirection: 'column',
+  },
+  languageLabel: {
+    fontSize: 17,
+    fontWeight: '600' as const,
+    color: '#000000',
+    marginBottom: 4,
+  },
+  languageLabelActive: {
+    color: '#007AFF',
+  },
+  languageSubLabel: {
+    fontSize: 14,
+    color: '#8E8E93',
+  },
+  checkMark: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#007AFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkMarkText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700' as const,
   },
 });

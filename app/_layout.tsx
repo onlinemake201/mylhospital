@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { HospitalProvider } from "@/contexts/HospitalContext";
 import { UserManagementProvider } from "@/contexts/UserManagementContext";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -30,15 +31,17 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <UserManagementProvider>
-          <HospitalProvider>
-            <GestureHandlerRootView style={{ flex: 1 }}>
-              <RootLayoutNav />
-            </GestureHandlerRootView>
-          </HospitalProvider>
-        </UserManagementProvider>
-      </AuthProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <UserManagementProvider>
+            <HospitalProvider>
+              <GestureHandlerRootView style={{ flex: 1 }}>
+                <RootLayoutNav />
+              </GestureHandlerRootView>
+            </HospitalProvider>
+          </UserManagementProvider>
+        </AuthProvider>
+      </LanguageProvider>
     </QueryClientProvider>
   );
 }
