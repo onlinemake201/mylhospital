@@ -228,3 +228,30 @@ export interface HospitalSettings {
   taxId?: string;
   language?: 'de' | 'en';
 }
+
+export interface PatientFile {
+  id: string;
+  patientId: string;
+  name: string;
+  type: 'image' | 'document' | 'report';
+  url: string;
+  uploadedBy: string;
+  uploadedAt: string;
+  category: string;
+  notes?: string;
+}
+
+export interface PatientVisit {
+  id: string;
+  patientId: string;
+  date: string;
+  time: string;
+  doctorId: string;
+  doctorName: string;
+  chiefComplaint: string;
+  diagnosis: string;
+  treatment: string;
+  prescriptions?: string[];
+  notes?: string;
+  category: 'consultation' | 'follow_up' | 'emergency' | 'procedure';
+}

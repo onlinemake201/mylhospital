@@ -1,7 +1,7 @@
 import createContextHook from '@nkzw/create-context-hook';
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Patient, Appointment, Medication, MedicationRegistry, LabOrder, EmergencyCase, Task, Notification, Invoice, HospitalSettings } from '@/types';
+import { Patient, Appointment, Medication, MedicationRegistry, LabOrder, EmergencyCase, Task, Notification, Invoice, HospitalSettings, PatientVisit, PatientFile } from '@/types';
 
 const HOSPITAL_SETTINGS_KEY = '@hospital_settings';
 
@@ -188,6 +188,25 @@ export const [HospitalProvider, useHospital] = createContextHook(() => {
     language: 'de',
   });
 
+  const [patientVisits, setPatientVisits] = useState<PatientVisit[]>([
+    {
+      id: 'v1',
+      patientId: 'p1',
+      date: '2025-10-12',
+      time: '10:30',
+      doctorId: 'd1',
+      doctorName: 'Dr. Sarah Johnson',
+      chiefComplaint: 'Chronische Rückenschmerzen',
+      diagnosis: 'Lumbale Spondylose',
+      treatment: 'Physiotherapie empfohlen, Schmerzmedikation',
+      prescriptions: ['Ibuprofen 400mg', 'Physiotherapie 10x'],
+      notes: 'Patient zeigt gute Compliance, Termin in 4 Wochen',
+      category: 'consultation',
+    },
+  ]);
+
+  const [patientFiles, setPatientFiles] = useState<PatientFile[]>([]);
+
   useEffect(() => {
     const loadHospitalSettings = async () => {
       try {
@@ -327,6 +346,16 @@ export const [HospitalProvider, useHospital] = createContextHook(() => {
     setInvoices(prev => prev.filter(i => i.id !== id));
   }, []);
 
+  const addPatientVisit = useCallback((visit: PatientVisit) => {
+    console.log('HospitalContext: Adding patient visit:', visit);
+    setPatientVisits(prev => [...prev, visit]);
+  }, []);
+
+  const addPatientFile = useCallback((file: PatientFile) => {
+    console.log('HospitalContext: Adding patient file:', file);
+    setPatientFiles(prev => [...prev, file]);
+  }, []);
+
   return useMemo(() => ({
     patients,
     appointments,
@@ -338,6 +367,8 @@ export const [HospitalProvider, useHospital] = createContextHook(() => {
     tasks,
     notifications,
     hospitalSettings,
+    patientVisits,
+    patientFiles,
     addPatient,
     updatePatient,
     deletePatient,
@@ -356,5 +387,7 @@ export const [HospitalProvider, useHospital] = createContextHook(() => {
     markNotificationRead,
     updateTaskStatus,
     updateHospitalSettings,
-  }), [patients, appointments, medications, medicationRegistry, invoices, labOrders, emergencyCases, tasks, notifications, hospitalSettings, addPatient, updatePatient, deletePatient, addAppointment, updateAppointment, deleteAppointment, addMedication, updateMedication, deleteMedication, addMedicationRegistry, updateMedicationRegistry, deleteMedicationRegistry, addInvoice, updateInvoice, deleteInvoice, markNotificationRead, updateTaskStatus, updateHospitalSettings]);
+    addPatientVisit,
+    addPatientFile,
+  }), [patients, appointments, medications, medicationRegistry, invoices, labOrders, emergencyCases, tasks, notifications, hospitalSettings, patientVisits, patientFiles, addPatient, updatePatient, deletePatient, addAppointment, updateAppointment, deleteAppointment, addMedication, updateMedication, deleteMedication, addMedicationRegistry, updateMedicationRegistry, deleteMedicationRegistry, addInvoice, updateInvoice, deleteInvoice, markNotificationRead, updateTaskStatus, updateHospitalSettings, addPatientVisit, addPatientFile]);
 });
