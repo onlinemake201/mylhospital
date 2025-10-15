@@ -47,8 +47,8 @@ export default function ProfileScreen() {
               const result = await logout();
               console.log('Profile: Logout result:', result);
               if (result.success) {
-                console.log('Profile: Logout successful, navigating to login...');
-                router.replace('/login');
+                console.log('Profile: Logout successful, navigating to index...');
+                router.replace('/');
               } else {
                 Alert.alert('Fehler', result.error || 'Abmeldung fehlgeschlagen');
               }
