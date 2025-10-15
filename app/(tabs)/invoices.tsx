@@ -1,0 +1,926 @@
+import React, { useState, useMemo } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Modal,
+  Alert,
+  Platform,
+} from 'react-native';
+import { Stack } from 'expo-router';
+import { Plus, FileText, Download, Eye, Trash2, X } from 'lucide-react-native';
+import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { useHospital } from '@/contexts/HospitalContext';
+import { Invoice, InvoiceItem } from '@/types';
+
+type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
+
+export default function InvoicesScreen() {
+  const { patients, medications, invoices, updateInvoice, deleteInvoice } = useHospital();
+  const [selectedStatus, setSelectedStatus] = useState<InvoiceStatus | 'all'>('all');
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedPatientId, setSelectedPatientId] = useState('');
+  const [selectedMedications, setSelectedMedications] = useState<string[]>([]);
+
+  const filteredInvoices = useMemo(() => {
+    if (selectedStatus === 'all') {
+      return invoices;
+    }
+    return invoices.filter(inv => inv.status === selectedStatus);
+  }, [invoices, selectedStatus]);
+
+  const statusTabs: { label: string; value: InvoiceStatus | 'all'; count: number }[] = [
+    { label: 'Alle', value: 'all', count: invoices.length },
+    { label: 'Entwurf', value: 'draft', count: invoices.filter(i => i.status === 'draft').length },
+    { label: 'Gesendet', value: 'sent', count: invoices.filter(i => i.status === 'sent').length },
+    { label: 'Bezahlt', value: 'paid', count: invoices.filter(i => i.status === 'paid').length },
+    { label: 'Überfällig', value: 'overdue', count: invoices.filter(i => i.status === 'overdue').length },
+  ];
+
+  const handleCreateInvoice = () => {
+    if (!selectedPatientId) {
+      Alert.alert('Fehler', 'Bitte wählen Sie einen Patienten aus');
+      return;
+    }
+
+    if (selectedMedications.length === 0) {
+      Alert.alert('Fehler', 'Bitte wählen Sie mindestens ein Medikament aus');
+      return;
+    }
+
+    const patient = patients.find(p => p.id === selectedPatientId);
+    if (!patient) return;
+
+    const items: InvoiceItem[] = selectedMedications.map(medId => {
+      const med = medications.find(m => m.id === medId);
+      if (!med) return null;
+
+      const unitPrice = Math.random() * 50 + 10;
+      const quantity = 1;
+
+      return {
+        id: `item-${Date.now()}-${medId}`,
+        description: `${med.name} - ${med.dosage}`,
+        code: medId,
+        quantity,
+        unitPrice: parseFloat(unitPrice.toFixed(2)),
+        total: parseFloat((unitPrice * quantity).toFixed(2)),
+        medicationId: medId,
+      };
+    }).filter(Boolean) as InvoiceItem[];
+
+    const subtotal = items.reduce((sum, item) => sum + item.total, 0);
+    const tax = subtotal * 0.19;
+    const total = subtotal + tax;
+
+    Alert.alert('Info', 'Bitte verwenden Sie die Medikamenten-Seite (Tab "Rechnung"), um Rechnungen zu erstellen.');
+    setShowCreateModal(false);
+    setSelectedPatientId('');
+    setSelectedMedications([]);
+    Alert.alert('Erfolg', 'Rechnung erfolgreich erstellt');
+  };
+
+  const handleDeleteInvoice = (invoiceId: string) => {
+    Alert.alert(
+      'Rechnung löschen',
+      'Möchten Sie diese Rechnung wirklich löschen?',
+      [
+        { text: 'Abbrechen', style: 'cancel' },
+        {
+          text: 'Löschen',
+          style: 'destructive',
+          onPress: () => {
+            deleteInvoice(invoiceId);
+            setSelectedInvoice(null);
+            Alert.alert('Erfolg', 'Rechnung gelöscht');
+          },
+        },
+      ]
+    );
+  };
+
+  const handleUpdateInvoiceStatus = (invoiceId: string, status: Invoice['status']) => {
+    updateInvoice(invoiceId, { status });
+    Alert.alert('Erfolg', `Status auf "${status}" aktualisiert`);
+  };
+
+  const generatePDFContent = (invoice: Invoice): string => {
+    const patient = patients.find(p => p.id === invoice.patientId);
+    const hospitalName = 'Klinikum Musterstadt';
+    const hospitalAddress = 'Musterstraße 123, 12345 Musterstadt';
+    const hospitalPhone = '+49 123 456789';
+    const hospitalEmail = 'info@klinikum-musterstadt.de';
+    
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rechnung ${invoice.id}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 40px; background: #fff; }
+    .header { margin-bottom: 40px; border-bottom: 3px solid #007AFF; padding-bottom: 20px; }
+    .header .hospital-info { margin-bottom: 20px; }
+    .header .hospital-name { color: #007AFF; font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+    .header .hospital-details { color: #666; font-size: 13px; line-height: 1.6; }
+    .header h1 { color: #000; font-size: 32px; margin-bottom: 10px; }
+    .header p { color: #666; font-size: 14px; }
+    .info-section { display: flex; justify-content: space-between; margin-bottom: 40px; }
+    .info-block { flex: 1; }
+    .info-block h3 { font-size: 14px; color: #666; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .info-block p { font-size: 16px; color: #000; margin-bottom: 5px; }
+    .table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+    .table thead { background: #F2F2F7; }
+    .table th { text-align: left; padding: 12px; font-size: 14px; color: #666; font-weight: 600; }
+    .table td { padding: 12px; border-bottom: 1px solid #E5E5EA; font-size: 15px; }
+    .table tbody tr:hover { background: #F9F9F9; }
+    .totals { margin-left: auto; width: 300px; }
+    .totals-row { display: flex; justify-content: space-between; padding: 10px 0; font-size: 16px; }
+    .totals-row.subtotal { color: #666; }
+    .totals-row.tax { color: #666; border-bottom: 1px solid #E5E5EA; padding-bottom: 15px; }
+    .totals-row.total { font-size: 20px; font-weight: 700; color: #007AFF; padding-top: 15px; }
+    .footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid #E5E5EA; text-align: center; color: #666; font-size: 12px; }
+    .status-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+    .status-draft { background: #F2F2F7; color: #666; }
+    .status-sent { background: #E5F3FF; color: #007AFF; }
+    .status-paid { background: #E5F9E5; color: #34C759; }
+    @media print {
+      body { padding: 20px; }
+      .no-print { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="hospital-info">
+      <div class="hospital-name">${hospitalName}</div>
+      <div class="hospital-details">
+        ${hospitalAddress}<br>
+        Tel: ${hospitalPhone} | E-Mail: ${hospitalEmail}
+      </div>
+    </div>
+    <h1>Medikamenten-Rechnung</h1>
+    <p>Rechnungsnummer: ${invoice.id}</p>
+  </div>
+
+  <div class="info-section">
+    <div class="info-block">
+      <h3>Patient</h3>
+      <p><strong>${invoice.patientName}</strong></p>
+      <p>MRN: ${patient?.mrn || 'N/A'}</p>
+      <p>Geburtsdatum: ${patient?.dateOfBirth ? new Date(patient.dateOfBirth).toLocaleDateString('de-DE') : 'N/A'}</p>
+      ${patient?.insurance ? `<p>Versicherung: ${patient.insurance.provider}</p>` : ''}
+    </div>
+    <div class="info-block" style="text-align: right;">
+      <h3>Rechnungsdetails</h3>
+      <p>Datum: ${new Date(invoice.date).toLocaleDateString('de-DE')}</p>
+      <p>Fällig am: ${new Date(invoice.dueDate).toLocaleDateString('de-DE')}</p>
+      <p>Status: <span class="status-badge status-${invoice.status}">${invoice.status.toUpperCase()}</span></p>
+    </div>
+  </div>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Beschreibung</th>
+        <th>Code</th>
+        <th style="text-align: center;">Menge</th>
+        <th style="text-align: right;">Einzelpreis</th>
+        <th style="text-align: right;">Gesamt</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${invoice.items.map(item => `
+        <tr>
+          <td>${item.description}</td>
+          <td>${item.code || '-'}</td>
+          <td style="text-align: center;">${item.quantity}</td>
+          <td style="text-align: right;">€${item.unitPrice.toFixed(2)}</td>
+          <td style="text-align: right;">€${item.total.toFixed(2)}</td>
+        </tr>
+      `).join('')}
+    </tbody>
+  </table>
+
+  <div class="totals">
+    <div class="totals-row subtotal">
+      <span>Zwischensumme:</span>
+      <span>€${invoice.subtotal.toFixed(2)}</span>
+    </div>
+    <div class="totals-row tax">
+      <span>MwSt. (19%):</span>
+      <span>€${invoice.tax.toFixed(2)}</span>
+    </div>
+    <div class="totals-row total">
+      <span>Gesamtsumme:</span>
+      <span>€${invoice.total.toFixed(2)}</span>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p><strong>${hospitalName}</strong></p>
+    <p>${hospitalAddress}</p>
+    <p>Tel: ${hospitalPhone} | E-Mail: ${hospitalEmail}</p>
+    <p style="margin-top: 20px;">Vielen Dank für Ihr Vertrauen.</p>
+    <p>Bei Fragen zur Rechnung kontaktieren Sie uns bitte unter: billing@klinikum-musterstadt.de</p>
+  </div>
+
+  <div class="no-print" style="margin-top: 40px; text-align: center;">
+    <button onclick="window.print()" style="padding: 12px 24px; background: #007AFF; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer;">
+      Drucken / Als PDF speichern
+    </button>
+  </div>
+</body>
+</html>
+    `;
+  };
+
+  const handleViewInvoice = (invoice: Invoice) => {
+    if (Platform.OS === 'web') {
+      const htmlContent = generatePDFContent(invoice);
+      const newWindow = window.open('', '_blank');
+      if (newWindow) {
+        newWindow.document.write(htmlContent);
+        newWindow.document.close();
+      }
+    } else {
+      setSelectedInvoice(invoice);
+    }
+  };
+
+  const patientMedications = selectedPatientId
+    ? medications.filter(m => m.patientId === selectedPatientId && m.status === 'active')
+    : [];
+
+  return (
+    <>
+      <Stack.Screen
+        options={{
+          title: 'Rechnungen',
+          headerLargeTitle: true,
+          headerRight: () => (
+            <TouchableOpacity style={styles.addButton} onPress={() => setShowCreateModal(true)}>
+              <Plus size={24} color="#007AFF" />
+            </TouchableOpacity>
+          ),
+        }}
+      />
+      <View style={styles.container}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.tabsScroll}
+          contentContainerStyle={styles.tabsContent}
+        >
+          {statusTabs.map(tab => (
+            <TouchableOpacity
+              key={tab.value}
+              style={[
+                styles.tab,
+                selectedStatus === tab.value && styles.tabActive,
+              ]}
+              onPress={() => setSelectedStatus(tab.value)}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  selectedStatus === tab.value && styles.tabTextActive,
+                ]}
+              >
+                {tab.label}
+              </Text>
+              <View style={[
+                styles.tabBadge,
+                selectedStatus === tab.value && styles.tabBadgeActive,
+              ]}>
+                <Text style={[
+                  styles.tabBadgeText,
+                  selectedStatus === tab.value && styles.tabBadgeTextActive,
+                ]}>
+                  {tab.count}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
+          <Text style={styles.resultCount}>
+            {filteredInvoices.length} {filteredInvoices.length === 1 ? 'Rechnung' : 'Rechnungen'}
+          </Text>
+
+          {filteredInvoices.map(invoice => (
+            <TouchableOpacity
+              key={invoice.id}
+              onPress={() => setSelectedInvoice(selectedInvoice?.id === invoice.id ? null : invoice)}
+              activeOpacity={0.7}
+            >
+              <Card style={[styles.invoiceCard, selectedInvoice?.id === invoice.id && styles.invoiceCardSelected]}>
+                <View style={styles.invoiceHeader}>
+                  <View style={styles.invoiceInfo}>
+                    <FileText size={20} color="#007AFF" />
+                    <View style={styles.invoiceDetails}>
+                      <Text style={styles.invoiceId}>{invoice.id}</Text>
+                      <Text style={styles.patientName}>{invoice.patientName}</Text>
+                    </View>
+                  </View>
+                  <Badge
+                    label={invoice.status}
+                    variant={
+                      invoice.status === 'paid'
+                        ? 'success'
+                        : invoice.status === 'overdue'
+                        ? 'danger'
+                        : 'info'
+                    }
+                  />
+                </View>
+
+                <View style={styles.compactInfo}>
+                  <View style={styles.compactRow}>
+                    <Text style={styles.compactLabel}>Datum:</Text>
+                    <Text style={styles.compactValue}>
+                      {new Date(invoice.date).toLocaleDateString('de-DE')}
+                    </Text>
+                  </View>
+                  <View style={styles.compactRow}>
+                    <Text style={styles.compactLabel}>Summe:</Text>
+                    <Text style={styles.totalAmount}>€{invoice.total.toFixed(2)}</Text>
+                  </View>
+                </View>
+
+                {selectedInvoice?.id === invoice.id && (
+                  <>
+                    <View style={styles.expandedInfo}>
+                      <View style={styles.metaRow}>
+                        <Text style={styles.metaLabel}>Fällig:</Text>
+                        <Text style={styles.metaValue}>
+                          {new Date(invoice.dueDate).toLocaleDateString('de-DE')}
+                        </Text>
+                      </View>
+                      <View style={styles.metaRow}>
+                        <Text style={styles.metaLabel}>Positionen:</Text>
+                        <Text style={styles.metaValue}>{invoice.items.length}</Text>
+                      </View>
+                      <View style={styles.metaRow}>
+                        <Text style={styles.metaLabel}>Zwischensumme:</Text>
+                        <Text style={styles.metaValue}>€{invoice.subtotal.toFixed(2)}</Text>
+                      </View>
+                      <View style={styles.metaRow}>
+                        <Text style={styles.metaLabel}>MwSt. (19%):</Text>
+                        <Text style={styles.metaValue}>€{invoice.tax.toFixed(2)}</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.statusUpdateSection}>
+                      <Text style={styles.statusUpdateLabel}>Status ändern:</Text>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statusChips}>
+                        {(['draft', 'sent', 'paid', 'overdue', 'cancelled'] as const).map((status) => (
+                          <TouchableOpacity
+                            key={status}
+                            style={[
+                              styles.statusChip,
+                              invoice.status === status && styles.statusChipActive,
+                            ]}
+                            onPress={() => handleUpdateInvoiceStatus(invoice.id, status)}
+                          >
+                            <Text
+                              style={[
+                                styles.statusChipText,
+                                invoice.status === status && styles.statusChipTextActive,
+                              ]}
+                            >
+                              {status === 'draft' ? 'Entwurf' : status === 'sent' ? 'Gesendet' : status === 'paid' ? 'Bezahlt' : status === 'overdue' ? 'Überfällig' : 'Storniert'}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+
+                    <View style={styles.invoiceActions}>
+                      <TouchableOpacity
+                        style={styles.viewButton}
+                        onPress={() => handleViewInvoice(invoice)}
+                      >
+                        <Eye size={16} color="#007AFF" />
+                        <Text style={styles.viewButtonText}>Ansehen</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.downloadButton}
+                        onPress={() => handleViewInvoice(invoice)}
+                      >
+                        <Download size={16} color="#34C759" />
+                        <Text style={styles.downloadButtonText}>PDF</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => handleDeleteInvoice(invoice.id)}
+                      >
+                        <Trash2 size={16} color="#FF3B30" />
+                      </TouchableOpacity>
+                    </View>
+                  </>
+                )}
+              </Card>
+            </TouchableOpacity>
+          ))}
+
+          {filteredInvoices.length === 0 && (
+            <View style={styles.emptyState}>
+              <FileText size={64} color="#C7C7CC" />
+              <Text style={styles.emptyText}>Keine Rechnungen vorhanden</Text>
+              <Text style={styles.emptySubtext}>
+                Erstellen Sie eine neue Rechnung für Medikamente
+              </Text>
+            </View>
+          )}
+        </ScrollView>
+
+        <Modal
+          visible={showCreateModal}
+          animationType="slide"
+          transparent
+          onRequestClose={() => setShowCreateModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Neue Medikamenten-Rechnung</Text>
+                <TouchableOpacity onPress={() => setShowCreateModal(false)}>
+                  <X size={24} color="#8E8E93" />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView style={styles.modalScroll}>
+                <View style={styles.formSection}>
+                  <Text style={styles.sectionLabel}>Patient auswählen:</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    {patients.map(patient => (
+                      <TouchableOpacity
+                        key={patient.id}
+                        style={[
+                          styles.patientChip,
+                          selectedPatientId === patient.id && styles.patientChipActive,
+                        ]}
+                        onPress={() => {
+                          setSelectedPatientId(patient.id);
+                          setSelectedMedications([]);
+                        }}
+                      >
+                        <Text
+                          style={[
+                            styles.patientChipText,
+                            selectedPatientId === patient.id && styles.patientChipTextActive,
+                          ]}
+                        >
+                          {patient.firstName} {patient.lastName}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+
+                {selectedPatientId && (
+                  <View style={styles.formSection}>
+                    <Text style={styles.sectionLabel}>Medikamente auswählen:</Text>
+                    <ScrollView style={styles.medicationList}>
+                      {patientMedications.length > 0 ? (
+                        patientMedications.map(med => (
+                          <TouchableOpacity
+                            key={med.id}
+                            style={[
+                              styles.medicationItem,
+                              selectedMedications.includes(med.id) && styles.medicationItemActive,
+                            ]}
+                            onPress={() => {
+                              setSelectedMedications(prev =>
+                                prev.includes(med.id)
+                                  ? prev.filter(id => id !== med.id)
+                                  : [...prev, med.id]
+                              );
+                            }}
+                          >
+                            <View style={styles.medicationInfo}>
+                              <Text style={styles.medicationName}>{med.name}</Text>
+                              <Text style={styles.medicationDosage}>{med.dosage}</Text>
+                            </View>
+                            {selectedMedications.includes(med.id) && (
+                              <View style={styles.checkmark}>
+                                <Text style={styles.checkmarkText}>✓</Text>
+                              </View>
+                            )}
+                          </TouchableOpacity>
+                        ))
+                      ) : (
+                        <Text style={styles.noMedicationsText}>
+                          Keine aktiven Medikamente für diesen Patienten
+                        </Text>
+                      )}
+                    </ScrollView>
+                  </View>
+                )}
+              </ScrollView>
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => {
+                    setShowCreateModal(false);
+                    setSelectedPatientId('');
+                    setSelectedMedications([]);
+                  }}
+                >
+                  <Text style={styles.cancelButtonText}>Abbrechen</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.confirmButton]}
+                  onPress={handleCreateInvoice}
+                >
+                  <Text style={styles.confirmButtonText}>Erstellen</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      </View>
+    </>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F2F2F7',
+  },
+  tabsScroll: {
+    maxHeight: 60,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5EA',
+  },
+  tabsContent: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  tab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#F2F2F7',
+    marginRight: 8,
+  },
+  tabActive: {
+    backgroundColor: '#007AFF',
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: '#000000',
+  },
+  tabTextActive: {
+    color: '#FFFFFF',
+  },
+  tabBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    backgroundColor: '#E5E5EA',
+  },
+  tabBadgeActive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  tabBadgeText: {
+    fontSize: 12,
+    fontWeight: '700' as const,
+    color: '#000000',
+  },
+  tabBadgeTextActive: {
+    color: '#FFFFFF',
+  },
+  list: {
+    flex: 1,
+  },
+  listContent: {
+    padding: 16,
+  },
+  resultCount: {
+    fontSize: 14,
+    color: '#8E8E93',
+    marginBottom: 12,
+  },
+  invoiceCard: {
+    marginBottom: 12,
+  },
+  invoiceCardSelected: {
+    borderWidth: 2,
+    borderColor: '#007AFF',
+  },
+  invoiceHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  invoiceInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 12,
+  },
+  invoiceDetails: {
+    flex: 1,
+  },
+  invoiceId: {
+    fontSize: 12,
+    color: '#8E8E93',
+    marginBottom: 4,
+  },
+  patientName: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: '#000000',
+  },
+  compactInfo: {
+    gap: 8,
+  },
+  compactRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  compactLabel: {
+    fontSize: 13,
+    color: '#8E8E93',
+  },
+  compactValue: {
+    fontSize: 13,
+    fontWeight: '500' as const,
+    color: '#000000',
+  },
+  totalAmount: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: '#007AFF',
+  },
+  expandedInfo: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F2F2F7',
+  },
+  metaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+  },
+  metaLabel: {
+    fontSize: 13,
+    color: '#8E8E93',
+  },
+  metaValue: {
+    fontSize: 13,
+    fontWeight: '500' as const,
+    color: '#000000',
+  },
+  invoiceActions: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 12,
+  },
+  viewButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    backgroundColor: '#E5F3FF',
+    borderRadius: 8,
+  },
+  viewButtonText: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: '#007AFF',
+  },
+  downloadButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    backgroundColor: '#E5F9E5',
+    borderRadius: 8,
+  },
+  downloadButtonText: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: '#34C759',
+  },
+  deleteButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    backgroundColor: '#FFE5E5',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  statusUpdateSection: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F2F2F7',
+  },
+  statusUpdateLabel: {
+    fontSize: 13,
+    fontWeight: '600' as const,
+    color: '#8E8E93',
+    marginBottom: 8,
+  },
+  statusChips: {
+    flexDirection: 'row',
+  },
+  statusChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: '#F2F2F7',
+    marginRight: 8,
+  },
+  statusChipActive: {
+    backgroundColor: '#007AFF',
+  },
+  statusChipText: {
+    fontSize: 12,
+    fontWeight: '500' as const,
+    color: '#000000',
+  },
+  statusChipTextActive: {
+    color: '#FFFFFF',
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  emptyText: {
+    fontSize: 20,
+    fontWeight: '600' as const,
+    color: '#8E8E93',
+    marginTop: 16,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#C7C7CC',
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  addButton: {
+    marginRight: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5EA',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700' as const,
+    color: '#000000',
+  },
+  modalScroll: {
+    maxHeight: 400,
+  },
+  formSection: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F2F2F7',
+  },
+  sectionLabel: {
+    fontSize: 15,
+    fontWeight: '600' as const,
+    color: '#000000',
+    marginBottom: 12,
+  },
+  patientChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: '#F2F2F7',
+    marginRight: 8,
+  },
+  patientChipActive: {
+    backgroundColor: '#007AFF',
+  },
+  patientChipText: {
+    fontSize: 14,
+    fontWeight: '500' as const,
+    color: '#000000',
+  },
+  patientChipTextActive: {
+    color: '#FFFFFF',
+  },
+  medicationList: {
+    maxHeight: 200,
+  },
+  medicationItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#F2F2F7',
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  medicationItemActive: {
+    backgroundColor: '#E5F3FF',
+    borderWidth: 2,
+    borderColor: '#007AFF',
+  },
+  medicationInfo: {
+    flex: 1,
+  },
+  medicationName: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: '#000000',
+    marginBottom: 4,
+  },
+  medicationDosage: {
+    fontSize: 14,
+    color: '#8E8E93',
+  },
+  checkmark: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#007AFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkmarkText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700' as const,
+  },
+  noMedicationsText: {
+    fontSize: 14,
+    color: '#8E8E93',
+    textAlign: 'center',
+    paddingVertical: 20,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 12,
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E5EA',
+  },
+  modalButton: {
+    flex: 1,
+    height: 50,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#F2F2F7',
+  },
+  cancelButtonText: {
+    fontSize: 17,
+    fontWeight: '600' as const,
+    color: '#000000',
+  },
+  confirmButton: {
+    backgroundColor: '#007AFF',
+  },
+  confirmButtonText: {
+    fontSize: 17,
+    fontWeight: '600' as const,
+    color: '#FFFFFF',
+  },
+});
