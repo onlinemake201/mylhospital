@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import { Stack, Redirect } from 'expo-router';
 import { Plus, FileText, Download, Eye, Trash2, X, TrendingUp, TrendingDown, DollarSign, Clock } from 'lucide-react-native';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { useHospital } from '@/contexts/HospitalContext';
@@ -299,10 +301,11 @@ export default function InvoicesScreen() {
     `;
   };
 
-  const handleViewInvoice = (invoice: Invoice) => {
+  const handleViewInvoice = async (invoice: Invoice) => {
     console.log('handleViewInvoice called for invoice:', invoice.id);
+    const htmlContent = generatePDFContent(invoice);
+    
     if (Platform.OS === 'web') {
-      const htmlContent = generatePDFContent(invoice);
       console.log('Generated HTML content length:', htmlContent.length);
       const newWindow = window.open('', '_blank');
       if (newWindow) {
@@ -314,14 +317,36 @@ export default function InvoicesScreen() {
         Alert.alert('Fehler', 'Popup-Blocker verhindert das Öffnen. Bitte erlauben Sie Popups für diese Seite.');
       }
     } else {
-      Alert.alert('Info', 'PDF-Vorschau ist nur im Web verfügbar');
+      try {
+        const fileName = `Rechnung-${invoice.id}.html`;
+        const fileUri = `${FileSystem.cacheDirectory}${fileName}`;
+        
+        await FileSystem.writeAsStringAsync(fileUri, htmlContent, {
+          encoding: FileSystem.EncodingType.UTF8,
+        });
+        
+        const canShare = await Sharing.isAvailableAsync();
+        if (canShare) {
+          await Sharing.shareAsync(fileUri, {
+            mimeType: 'text/html',
+            dialogTitle: 'Rechnung ansehen',
+            UTI: 'public.html',
+          });
+        } else {
+          Alert.alert('Fehler', 'Teilen ist auf diesem Gerät nicht verfügbar');
+        }
+      } catch (error) {
+        console.error('Error sharing invoice:', error);
+        Alert.alert('Fehler', 'Rechnung konnte nicht geteilt werden');
+      }
     }
   };
 
-  const handleDownloadPDF = (invoice: Invoice) => {
+  const handleDownloadPDF = async (invoice: Invoice) => {
     console.log('handleDownloadPDF called for invoice:', invoice.id);
+    const htmlContent = generatePDFContent(invoice);
+    
     if (Platform.OS === 'web') {
-      const htmlContent = generatePDFContent(invoice);
       const blob = new Blob([htmlContent], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -334,7 +359,29 @@ export default function InvoicesScreen() {
       console.log('PDF download initiated');
       Alert.alert('Erfolg', 'Rechnung wurde heruntergeladen. Öffnen Sie die Datei und drucken Sie sie als PDF.');
     } else {
-      Alert.alert('Info', 'PDF-Download ist nur im Web verfügbar');
+      try {
+        const fileName = `Rechnung-${invoice.id}.html`;
+        const fileUri = `${FileSystem.documentDirectory}${fileName}`;
+        
+        await FileSystem.writeAsStringAsync(fileUri, htmlContent, {
+          encoding: FileSystem.EncodingType.UTF8,
+        });
+        
+        const canShare = await Sharing.isAvailableAsync();
+        if (canShare) {
+          await Sharing.shareAsync(fileUri, {
+            mimeType: 'text/html',
+            dialogTitle: 'Rechnung speichern',
+            UTI: 'public.html',
+          });
+          Alert.alert('Erfolg', 'Rechnung wird geteilt. Sie können sie speichern oder drucken.');
+        } else {
+          Alert.alert('Fehler', 'Teilen ist auf diesem Gerät nicht verfügbar');
+        }
+      } catch (error) {
+        console.error('Error saving invoice:', error);
+        Alert.alert('Fehler', 'Rechnung konnte nicht gespeichert werden');
+      }
     }
   };
 
