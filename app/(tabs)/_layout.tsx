@@ -8,7 +8,7 @@ import Colors from "@/constants/colors";
 
 export default function TabLayout() {
   const { user } = useAuth();
-  const isAdmin = user?.role === 'superadmin';
+  const isAdmin = user?.role === 'superadmin' || user?.role === 'hospital_admin';
 
   return (
     <Tabs
@@ -59,7 +59,7 @@ export default function TabLayout() {
         options={{
           title: "Lab",
           tabBarIcon: ({ color }) => <FlaskConical size={24} color={color} />,
-          href: isAdmin ? undefined : null,
+          href: null,
         }}
       />
       <Tabs.Screen
@@ -67,7 +67,7 @@ export default function TabLayout() {
         options={{
           title: "Emergency",
           tabBarIcon: ({ color }) => <AlertCircle size={24} color={color} />,
-          href: isAdmin ? undefined : null,
+          href: null,
         }}
       />
       <Tabs.Screen
@@ -75,7 +75,7 @@ export default function TabLayout() {
         options={{
           title: "Invoices",
           tabBarIcon: ({ color }) => <FileText size={24} color={color} />,
-          href: isAdmin ? undefined : null,
+          href: null,
         }}
       />
       <Tabs.Screen

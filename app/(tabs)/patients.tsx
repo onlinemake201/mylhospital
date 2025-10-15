@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { ScrollView, View, Text, StyleSheet, TextInput, TouchableOpacity, Modal, Alert } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { Search, Plus, Filter, X, Edit2, Trash2 } from 'lucide-react-native';
 import { PatientCard } from '@/components/PatientCard';
 import { useHospital } from '@/contexts/HospitalContext';
 import { Patient } from '@/types';
 
 export default function PatientsScreen() {
+  const router = useRouter();
   const { patients, addPatient, updatePatient, deletePatient } = useHospital();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<Patient['status'] | 'all'>('all');
@@ -114,7 +115,7 @@ export default function PatientsScreen() {
             >
               <PatientCard 
                 patient={patient} 
-                onPress={() => setSelectedPatient(selectedPatient?.id === patient.id ? null : patient)}
+                onPress={() => router.push(`/patient-details/${patient.id}`)}
               />
             </View>
           ))}
