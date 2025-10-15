@@ -300,15 +300,41 @@ export default function InvoicesScreen() {
   };
 
   const handleViewInvoice = (invoice: Invoice) => {
+    console.log('handleViewInvoice called for invoice:', invoice.id);
     if (Platform.OS === 'web') {
       const htmlContent = generatePDFContent(invoice);
+      console.log('Generated HTML content length:', htmlContent.length);
       const newWindow = window.open('', '_blank');
       if (newWindow) {
         newWindow.document.write(htmlContent);
         newWindow.document.close();
+        console.log('Invoice preview opened in new window');
+      } else {
+        console.error('Failed to open new window - popup blocker?');
+        Alert.alert('Fehler', 'Popup-Blocker verhindert das Öffnen. Bitte erlauben Sie Popups für diese Seite.');
       }
     } else {
-      setSelectedInvoice(invoice);
+      Alert.alert('Info', 'PDF-Vorschau ist nur im Web verfügbar');
+    }
+  };
+
+  const handleDownloadPDF = (invoice: Invoice) => {
+    console.log('handleDownloadPDF called for invoice:', invoice.id);
+    if (Platform.OS === 'web') {
+      const htmlContent = generatePDFContent(invoice);
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Rechnung-${invoice.id}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      console.log('PDF download initiated');
+      Alert.alert('Erfolg', 'Rechnung wurde heruntergeladen. Öffnen Sie die Datei und drucken Sie sie als PDF.');
+    } else {
+      Alert.alert('Info', 'PDF-Download ist nur im Web verfügbar');
     }
   };
 
@@ -538,7 +564,7 @@ export default function InvoicesScreen() {
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={styles.downloadButton}
-                        onPress={() => handleViewInvoice(invoice)}
+                        onPress={() => handleDownloadPDF(invoice)}
                       >
                         <Download size={16} color="#34C759" />
                         <Text style={styles.downloadButtonText}>PDF</Text>
