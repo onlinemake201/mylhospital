@@ -192,10 +192,31 @@ export const [HospitalProvider, useHospital] = createContextHook(() => {
     const loadHospitalSettings = async () => {
       try {
         const stored = await AsyncStorage.getItem(HOSPITAL_SETTINGS_KEY);
+        console.log('HospitalContext: Loading stored settings...');
+        
         if (stored) {
-          const parsed = JSON.parse(stored);
-          setHospitalSettings(parsed);
-          console.log('HospitalContext: Settings loaded');
+          try {
+            if (stored === 'undefined' || stored === 'null' || stored.trim() === '') {
+              console.warn('HospitalContext: Invalid stored value, clearing...');
+              await AsyncStorage.removeItem(HOSPITAL_SETTINGS_KEY);
+              return;
+            }
+            
+            const parsed = JSON.parse(stored);
+            if (parsed && typeof parsed === 'object' && parsed.id) {
+              console.log('HospitalContext: Settings loaded successfully');
+              setHospitalSettings(parsed);
+            } else {
+              console.warn('HospitalContext: Invalid settings data structure, clearing...');
+              await AsyncStorage.removeItem(HOSPITAL_SETTINGS_KEY);
+            }
+          } catch (parseError) {
+            console.error('HospitalContext: JSON parse error:', parseError);
+            console.log('HospitalContext: Stored value was:', stored);
+            await AsyncStorage.removeItem(HOSPITAL_SETTINGS_KEY);
+          }
+        } else {
+          console.log('HospitalContext: No stored settings data found, using defaults');
         }
       } catch (error) {
         console.error('HospitalContext: Failed to load settings:', error);
