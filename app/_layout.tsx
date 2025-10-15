@@ -25,15 +25,15 @@ function RootLayoutNav() {
 }
 
 function LanguageSyncWrapper({ children }: { children: React.ReactNode }) {
-  const { hospitalSettings } = useHospital();
+  const hospital = useHospital();
   const { setLanguage } = useLanguage();
 
   useEffect(() => {
-    if (hospitalSettings?.language) {
-      console.log('LanguageSyncWrapper: Syncing language to:', hospitalSettings.language);
-      setLanguage(hospitalSettings.language);
+    if (hospital && hospital.hospitalSettings && hospital.hospitalSettings.language) {
+      console.log('LanguageSyncWrapper: Syncing language to:', hospital.hospitalSettings.language);
+      setLanguage(hospital.hospitalSettings.language);
     }
-  }, [hospitalSettings?.language, setLanguage]);
+  }, [hospital?.hospitalSettings?.language, setLanguage]);
 
   return <>{children}</>;
 }
