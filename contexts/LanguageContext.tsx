@@ -1,19 +1,23 @@
 import createContextHook from '@nkzw/create-context-hook';
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { translations, Language } from '@/constants/translations';
-import { useHospital } from './HospitalContext';
 
 export const [LanguageProvider, useLanguage] = createContextHook(() => {
-  const { hospitalSettings } = useHospital();
-  const language = (hospitalSettings.language || 'de') as Language;
+  const [language, setLanguageState] = useState<Language>('de');
 
   const t = useMemo(() => translations[language], [language]);
+
+  const setLanguage = useCallback((newLanguage: Language) => {
+    console.log('LanguageContext: Setting language to:', newLanguage);
+    setLanguageState(newLanguage);
+  }, []);
 
   return useMemo(
     () => ({
       language,
       t,
+      setLanguage,
     }),
-    [language, t]
+    [language, t, setLanguage]
   );
 });

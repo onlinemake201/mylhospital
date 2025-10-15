@@ -45,19 +45,19 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <LanguageProvider>
-        <AuthProvider>
-          <UserManagementProvider>
-            <HospitalProvider>
+      <AuthProvider>
+        <UserManagementProvider>
+          <HospitalProvider>
+            <LanguageProvider>
               <LanguageSyncWrapper>
                 <GestureHandlerRootView style={{ flex: 1 }}>
                   <RootLayoutNav />
                 </GestureHandlerRootView>
               </LanguageSyncWrapper>
-            </HospitalProvider>
-          </UserManagementProvider>
-        </AuthProvider>
-      </LanguageProvider>
+            </LanguageProvider>
+          </HospitalProvider>
+        </UserManagementProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
