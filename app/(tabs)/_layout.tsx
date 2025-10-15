@@ -59,6 +59,7 @@ export default function TabLayout() {
         options={{
           title: "Lab",
           tabBarIcon: ({ color }) => <FlaskConical size={24} color={color} />,
+          href: isAdmin ? undefined : null,
         }}
       />
       <Tabs.Screen
@@ -66,6 +67,7 @@ export default function TabLayout() {
         options={{
           title: "Emergency",
           tabBarIcon: ({ color }) => <AlertCircle size={24} color={color} />,
+          href: isAdmin ? undefined : null,
         }}
       />
       <Tabs.Screen
