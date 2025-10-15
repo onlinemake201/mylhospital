@@ -1,6 +1,9 @@
 import createContextHook from '@nkzw/create-context-hook';
-import { useState, useCallback, useMemo } from 'react';
-import { Patient, Appointment, Medication, MedicationRegistry, LabOrder, EmergencyCase, Task, Notification, Invoice } from '@/types';
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Patient, Appointment, Medication, MedicationRegistry, LabOrder, EmergencyCase, Task, Notification, Invoice, HospitalSettings } from '@/types';
+
+const HOSPITAL_SETTINGS_KEY = '@hospital_settings';
 
 export const [HospitalProvider, useHospital] = createContextHook(() => {
   const [patients, setPatients] = useState<Patient[]>([
@@ -174,6 +177,44 @@ export const [HospitalProvider, useHospital] = createContextHook(() => {
 
   const [invoices, setInvoices] = useState<Invoice[]>([]);
 
+  const [hospitalSettings, setHospitalSettings] = useState<HospitalSettings>({
+    id: 'hosp-001',
+    name: 'Klinikum Musterstadt',
+    address: 'Musterstraße 123, 12345 Musterstadt',
+    phone: '+49 123 456789',
+    email: 'info@klinikum-musterstadt.de',
+    website: 'www.klinikum-musterstadt.de',
+    taxId: 'DE123456789',
+  });
+
+  useEffect(() => {
+    const loadHospitalSettings = async () => {
+      try {
+        const stored = await AsyncStorage.getItem(HOSPITAL_SETTINGS_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          setHospitalSettings(parsed);
+          console.log('HospitalContext: Settings loaded');
+        }
+      } catch (error) {
+        console.error('HospitalContext: Failed to load settings:', error);
+      }
+    };
+    loadHospitalSettings();
+  }, []);
+
+  const updateHospitalSettings = useCallback(async (updates: Partial<HospitalSettings>) => {
+    console.log('HospitalContext: Updating hospital settings:', updates);
+    const updated = { ...hospitalSettings, ...updates };
+    setHospitalSettings(updated);
+    try {
+      await AsyncStorage.setItem(HOSPITAL_SETTINGS_KEY, JSON.stringify(updated));
+      console.log('HospitalContext: Settings saved');
+    } catch (error) {
+      console.error('HospitalContext: Failed to save settings:', error);
+    }
+  }, [hospitalSettings]);
+
   const addPatient = useCallback((patient: Patient) => {
     console.log('HospitalContext: Adding patient:', patient);
     setPatients(prev => {
@@ -274,6 +315,7 @@ export const [HospitalProvider, useHospital] = createContextHook(() => {
     emergencyCases,
     tasks,
     notifications,
+    hospitalSettings,
     addPatient,
     updatePatient,
     deletePatient,
@@ -291,5 +333,6 @@ export const [HospitalProvider, useHospital] = createContextHook(() => {
     deleteInvoice,
     markNotificationRead,
     updateTaskStatus,
-  }), [patients, appointments, medications, medicationRegistry, invoices, labOrders, emergencyCases, tasks, notifications, addPatient, updatePatient, deletePatient, addAppointment, updateAppointment, deleteAppointment, addMedication, updateMedication, deleteMedication, addMedicationRegistry, updateMedicationRegistry, deleteMedicationRegistry, addInvoice, updateInvoice, deleteInvoice, markNotificationRead, updateTaskStatus]);
+    updateHospitalSettings,
+  }), [patients, appointments, medications, medicationRegistry, invoices, labOrders, emergencyCases, tasks, notifications, hospitalSettings, addPatient, updatePatient, deletePatient, addAppointment, updateAppointment, deleteAppointment, addMedication, updateMedication, deleteMedication, addMedicationRegistry, updateMedicationRegistry, deleteMedicationRegistry, addInvoice, updateInvoice, deleteInvoice, markNotificationRead, updateTaskStatus, updateHospitalSettings]);
 });

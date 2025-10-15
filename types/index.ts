@@ -216,3 +216,14 @@ export interface Notification {
   read: boolean;
   actionUrl?: string;
 }
+
+export interface HospitalSettings {
+  id: string;
+  name: string;
+  address: string;
+  phone: string;
+  email: string;
+  logo?: string;
+  website?: string;
+  taxId?: string;
+}

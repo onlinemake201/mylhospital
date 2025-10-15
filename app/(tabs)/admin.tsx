@@ -9,24 +9,41 @@ import {
   Alert,
   Modal,
   ActivityIndicator,
+  Image,
+  Platform,
 } from 'react-native';
 import { Stack } from 'expo-router';
-import { UserPlus, Search, MoreVertical, Lock, Trash2, Power, UserCog } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { UserPlus, Search, MoreVertical, Lock, Trash2, Power, UserCog, Settings, Building2, Upload } from 'lucide-react-native';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserManagement } from '@/contexts/UserManagementContext';
+import { useHospital } from '@/contexts/HospitalContext';
 import { User, UserRole } from '@/types';
 
 export default function AdminScreen() {
   const { user: currentUser } = useAuth();
   const { users, createUser, updateUser, deleteUser, toggleUserStatus, resetPassword, isLoading } = useUserManagement();
+  const { hospitalSettings, updateHospitalSettings } = useHospital();
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showActionsModal, setShowActionsModal] = useState(false);
   const [showRoleModal, setShowRoleModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showResetPasswordModal, setShowResetPasswordModal] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
   const [selectedRole, setSelectedRole] = useState<UserRole>('doctor');
+  const [activeTab, setActiveTab] = useState<'users' | 'settings'>('users');
+  const [settingsForm, setSettingsForm] = useState({
+    name: hospitalSettings.name,
+    address: hospitalSettings.address,
+    phone: hospitalSettings.phone,
+    email: hospitalSettings.email,
+    website: hospitalSettings.website || '',
+    taxId: hospitalSettings.taxId || '',
+  });
 
   const [newUserData, setNewUserData] = useState({
     name: '',
@@ -97,24 +114,74 @@ export default function AdminScreen() {
   };
 
   const handleResetPassword = (user: User) => {
-    Alert.prompt(
-      'Passwort zurücksetzen',
-      `Neues Passwort für ${user.name}:`,
-      [
-        { text: 'Abbrechen', style: 'cancel' },
-        {
-          text: 'Zurücksetzen',
-          onPress: async (password) => {
-            if (password) {
-              await resetPassword(user.id, password);
-              setShowActionsModal(false);
-              Alert.alert('Erfolg', 'Passwort zurückgesetzt');
-            }
-          },
-        },
-      ],
-      'secure-text'
-    );
+    setSelectedUser(user);
+    setNewPassword('');
+    setShowActionsModal(false);
+    setShowResetPasswordModal(true);
+  };
+
+  const handleConfirmResetPassword = async () => {
+    if (!selectedUser || !newPassword) {
+      Alert.alert('Fehler', 'Bitte geben Sie ein neues Passwort ein');
+      return;
+    }
+    if (newPassword.length < 6) {
+      Alert.alert('Fehler', 'Passwort muss mindestens 6 Zeichen lang sein');
+      return;
+    }
+    try {
+      await resetPassword(selectedUser.id, newPassword);
+      setShowResetPasswordModal(false);
+      setNewPassword('');
+      Alert.alert('Erfolg', `Passwort für ${selectedUser.name} wurde zurückgesetzt`);
+    } catch {
+      Alert.alert('Fehler', 'Passwort konnte nicht zurückgesetzt werden');
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    if (!settingsForm.name || !settingsForm.address) {
+      Alert.alert('Fehler', 'Name und Adresse sind Pflichtfelder');
+      return;
+    }
+    try {
+      await updateHospitalSettings(settingsForm);
+      setShowSettingsModal(false);
+      Alert.alert('Erfolg', 'Einstellungen gespeichert');
+    } catch {
+      Alert.alert('Fehler', 'Einstellungen konnten nicht gespeichert werden');
+    }
+  };
+
+  const handlePickLogo = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (!permissionResult.granted) {
+        Alert.alert('Berechtigung erforderlich', 'Bitte erlauben Sie den Zugriff auf Ihre Fotos');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const base64Image = result.assets[0].base64;
+        if (base64Image) {
+          const dataUri = `data:image/jpeg;base64,${base64Image}`;
+          await updateHospitalSettings({ logo: dataUri });
+          Alert.alert('Erfolg', 'Logo hochgeladen');
+        }
+      }
+    } catch (error) {
+      console.error('Error picking logo:', error);
+      Alert.alert('Fehler', 'Logo konnte nicht hochgeladen werden');
+    }
   };
 
   const handleChangeRole = (user: User) => {
@@ -154,67 +221,171 @@ export default function AdminScreen() {
     <>
       <Stack.Screen
         options={{
-          title: 'Benutzerverwaltung',
+          title: 'Administration',
           headerLargeTitle: true,
         }}
       />
       <View style={styles.container}>
-        <View style={styles.header}>
-          <View style={styles.searchContainer}>
-            <Search size={20} color="#8E8E93" style={styles.searchIcon} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Benutzer suchen..."
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-          </View>
+        <View style={styles.tabBar}>
           <TouchableOpacity
-            style={styles.createButton}
-            onPress={() => setShowCreateModal(true)}
+            style={[styles.tabButton, activeTab === 'users' && styles.tabButtonActive]}
+            onPress={() => setActiveTab('users')}
           >
-            <UserPlus size={20} color="#FFFFFF" />
+            <UserCog size={20} color={activeTab === 'users' ? '#007AFF' : '#8E8E93'} />
+            <Text style={[styles.tabButtonText, activeTab === 'users' && styles.tabButtonTextActive]}>
+              Benutzer
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tabButton, activeTab === 'settings' && styles.tabButtonActive]}
+            onPress={() => setActiveTab('settings')}
+          >
+            <Building2 size={20} color={activeTab === 'settings' ? '#007AFF' : '#8E8E93'} />
+            <Text style={[styles.tabButtonText, activeTab === 'settings' && styles.tabButtonTextActive]}>
+              Krankenhaus
+            </Text>
           </TouchableOpacity>
         </View>
 
-        {isLoading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#007AFF" />
-          </View>
+        {activeTab === 'users' ? (
+          <>
+            <View style={styles.header}>
+              <View style={styles.searchContainer}>
+                <Search size={20} color="#8E8E93" style={styles.searchIcon} />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Benutzer suchen..."
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                />
+              </View>
+              <TouchableOpacity
+                style={styles.createButton}
+                onPress={() => setShowCreateModal(true)}
+              >
+                <UserPlus size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+
+            {isLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#007AFF" />
+              </View>
+            ) : (
+              <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+                {filteredUsers.map(user => (
+                  <Card key={user.id} style={styles.userCard}>
+                    <View style={styles.userHeader}>
+                      <View style={styles.userInfo}>
+                        <View style={styles.avatar}>
+                          <Text style={styles.avatarText}>
+                            {user.name.split(' ').map(n => n[0]).join('')}
+                          </Text>
+                        </View>
+                        <View style={styles.userDetails}>
+                          <Text style={styles.userName}>{user.name}</Text>
+                          <Text style={styles.userEmail}>{user.email}</Text>
+                          <View style={styles.userMeta}>
+                            <Badge label={roleLabels[user.role]} variant="info" />
+                            <Badge
+                              label={user.isActive ? 'Aktiv' : 'Inaktiv'}
+                              variant={user.isActive ? 'success' : 'danger'}
+                            />
+                          </View>
+                        </View>
+                      </View>
+                      <TouchableOpacity
+                        onPress={() => {
+                          setSelectedUser(user);
+                          setShowActionsModal(true);
+                        }}
+                      >
+                        <MoreVertical size={20} color="#8E8E93" />
+                      </TouchableOpacity>
+                    </View>
+                  </Card>
+                ))}
+              </ScrollView>
+            )}
+          </>
         ) : (
           <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-            {filteredUsers.map(user => (
-              <Card key={user.id} style={styles.userCard}>
-                <View style={styles.userHeader}>
-                  <View style={styles.userInfo}>
-                    <View style={styles.avatar}>
-                      <Text style={styles.avatarText}>
-                        {user.name.split(' ').map(n => n[0]).join('')}
-                      </Text>
-                    </View>
-                    <View style={styles.userDetails}>
-                      <Text style={styles.userName}>{user.name}</Text>
-                      <Text style={styles.userEmail}>{user.email}</Text>
-                      <View style={styles.userMeta}>
-                        <Badge label={roleLabels[user.role]} variant="info" />
-                        <Badge
-                          label={user.isActive ? 'Aktiv' : 'Inaktiv'}
-                          variant={user.isActive ? 'success' : 'danger'}
-                        />
-                      </View>
-                    </View>
+            <Card style={styles.settingsCard}>
+              <View style={styles.settingsHeader}>
+                <Building2 size={24} color="#007AFF" />
+                <Text style={styles.settingsTitle}>Krankenhauseinstellungen</Text>
+              </View>
+              <Text style={styles.settingsDescription}>
+                Diese Informationen werden auf allen Rechnungen angezeigt
+              </Text>
+            </Card>
+
+            <Card style={styles.settingsCard}>
+              <Text style={styles.sectionTitle}>Logo</Text>
+              <View style={styles.logoSection}>
+                {hospitalSettings.logo ? (
+                  <Image source={{ uri: hospitalSettings.logo }} style={styles.logoPreview} />
+                ) : (
+                  <View style={styles.logoPlaceholder}>
+                    <Building2 size={48} color="#C7C7CC" />
                   </View>
-                  <TouchableOpacity
-                    onPress={() => {
-                      setSelectedUser(user);
-                      setShowActionsModal(true);
-                    }}
-                  >
-                    <MoreVertical size={20} color="#8E8E93" />
-                  </TouchableOpacity>
+                )}
+                <TouchableOpacity style={styles.uploadButton} onPress={handlePickLogo}>
+                  <Upload size={20} color="#007AFF" />
+                  <Text style={styles.uploadButtonText}>Logo hochladen</Text>
+                </TouchableOpacity>
+              </View>
+            </Card>
+
+            <Card style={styles.settingsCard}>
+              <Text style={styles.sectionTitle}>Krankenhaus-Informationen</Text>
+              <TouchableOpacity
+                style={styles.editButton}
+                onPress={() => {
+                  setSettingsForm({
+                    name: hospitalSettings.name,
+                    address: hospitalSettings.address,
+                    phone: hospitalSettings.phone,
+                    email: hospitalSettings.email,
+                    website: hospitalSettings.website || '',
+                    taxId: hospitalSettings.taxId || '',
+                  });
+                  setShowSettingsModal(true);
+                }}
+              >
+                <Settings size={20} color="#007AFF" />
+                <Text style={styles.editButtonText}>Bearbeiten</Text>
+              </TouchableOpacity>
+              
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Name:</Text>
+                <Text style={styles.infoValue}>{hospitalSettings.name}</Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Adresse:</Text>
+                <Text style={styles.infoValue}>{hospitalSettings.address}</Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Telefon:</Text>
+                <Text style={styles.infoValue}>{hospitalSettings.phone}</Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>E-Mail:</Text>
+                <Text style={styles.infoValue}>{hospitalSettings.email}</Text>
+              </View>
+              {hospitalSettings.website && (
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Website:</Text>
+                  <Text style={styles.infoValue}>{hospitalSettings.website}</Text>
                 </View>
-              </Card>
-            ))}
+              )}
+              {hospitalSettings.taxId && (
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Steuernummer:</Text>
+                  <Text style={styles.infoValue}>{hospitalSettings.taxId}</Text>
+                </View>
+              )}
+            </Card>
           </ScrollView>
         )}
 
@@ -386,6 +557,132 @@ export default function AdminScreen() {
                   onPress={handleSaveRole}
                 >
                   <Text style={styles.confirmButtonText}>Speichern</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        <Modal
+          visible={showSettingsModal}
+          animationType="slide"
+          transparent
+          onRequestClose={() => setShowSettingsModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Krankenhaus-Einstellungen</Text>
+              
+              <ScrollView style={styles.formScroll}>
+                <Text style={styles.inputLabel}>Name *</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Krankenhausname"
+                  value={settingsForm.name}
+                  onChangeText={(text) => setSettingsForm({ ...settingsForm, name: text })}
+                />
+                
+                <Text style={styles.inputLabel}>Adresse *</Text>
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  placeholder="Straße, PLZ, Stadt"
+                  value={settingsForm.address}
+                  onChangeText={(text) => setSettingsForm({ ...settingsForm, address: text })}
+                  multiline
+                  numberOfLines={3}
+                />
+
+                <Text style={styles.inputLabel}>Telefon</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="+49 123 456789"
+                  value={settingsForm.phone}
+                  onChangeText={(text) => setSettingsForm({ ...settingsForm, phone: text })}
+                  keyboardType="phone-pad"
+                />
+
+                <Text style={styles.inputLabel}>E-Mail</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="info@krankenhaus.de"
+                  value={settingsForm.email}
+                  onChangeText={(text) => setSettingsForm({ ...settingsForm, email: text })}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+
+                <Text style={styles.inputLabel}>Website</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="www.krankenhaus.de"
+                  value={settingsForm.website}
+                  onChangeText={(text) => setSettingsForm({ ...settingsForm, website: text })}
+                  autoCapitalize="none"
+                />
+
+                <Text style={styles.inputLabel}>Steuernummer</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="DE123456789"
+                  value={settingsForm.taxId}
+                  onChangeText={(text) => setSettingsForm({ ...settingsForm, taxId: text })}
+                />
+              </ScrollView>
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => setShowSettingsModal(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Abbrechen</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.confirmButton]}
+                  onPress={handleSaveSettings}
+                >
+                  <Text style={styles.confirmButtonText}>Speichern</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        <Modal
+          visible={showResetPasswordModal}
+          animationType="slide"
+          transparent
+          onRequestClose={() => setShowResetPasswordModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Passwort zurücksetzen</Text>
+              <Text style={styles.modalSubtitle}>{selectedUser?.name}</Text>
+              
+              <Text style={styles.inputLabel}>Neues Passwort *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Mindestens 6 Zeichen"
+                value={newPassword}
+                onChangeText={setNewPassword}
+                secureTextEntry
+                autoCapitalize="none"
+              />
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => {
+                    setShowResetPasswordModal(false);
+                    setNewPassword('');
+                  }}
+                >
+                  <Text style={styles.cancelButtonText}>Abbrechen</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.confirmButton]}
+                  onPress={handleConfirmResetPassword}
+                >
+                  <Text style={styles.confirmButtonText}>Zurücksetzen</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -630,5 +927,132 @@ const styles = StyleSheet.create({
   roleOptionTextActive: {
     color: '#FFFFFF',
     fontWeight: '600' as const,
+  },
+  tabBar: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5EA',
+  },
+  tabButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 16,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  tabButtonActive: {
+    borderBottomColor: '#007AFF',
+  },
+  tabButtonText: {
+    fontSize: 16,
+    fontWeight: '500' as const,
+    color: '#8E8E93',
+  },
+  tabButtonTextActive: {
+    color: '#007AFF',
+    fontWeight: '600' as const,
+  },
+  settingsCard: {
+    marginBottom: 16,
+  },
+  settingsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 8,
+  },
+  settingsTitle: {
+    fontSize: 20,
+    fontWeight: '700' as const,
+    color: '#000000',
+  },
+  settingsDescription: {
+    fontSize: 14,
+    color: '#8E8E93',
+    lineHeight: 20,
+  },
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: '600' as const,
+    color: '#000000',
+    marginBottom: 16,
+  },
+  logoSection: {
+    alignItems: 'center',
+    gap: 16,
+  },
+  logoPreview: {
+    width: 120,
+    height: 120,
+    borderRadius: 12,
+    backgroundColor: '#F2F2F7',
+  },
+  logoPlaceholder: {
+    width: 120,
+    height: 120,
+    borderRadius: 12,
+    backgroundColor: '#F2F2F7',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  uploadButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: '#E5F3FF',
+    borderRadius: 12,
+  },
+  uploadButtonText: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: '#007AFF',
+  },
+  editButton: {
+    position: 'absolute' as const,
+    top: 16,
+    right: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#E5F3FF',
+    borderRadius: 8,
+  },
+  editButtonText: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: '#007AFF',
+  },
+  infoRow: {
+    flexDirection: 'row',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F2F2F7',
+  },
+  infoLabel: {
+    fontSize: 15,
+    color: '#8E8E93',
+    width: 100,
+    fontWeight: '500' as const,
+  },
+  infoValue: {
+    flex: 1,
+    fontSize: 15,
+    color: '#000000',
+  },
+  formScroll: {
+    maxHeight: 400,
+  },
+  textArea: {
+    height: 80,
+    textAlignVertical: 'top',
+    paddingTop: 12,
   },
 });

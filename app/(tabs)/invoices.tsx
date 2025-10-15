@@ -21,7 +21,7 @@ type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
 
 export default function InvoicesScreen() {
   const { user } = useAuth();
-  const { patients, medications, invoices, updateInvoice, deleteInvoice } = useHospital();
+  const { patients, medications, invoices, hospitalSettings, updateInvoice, deleteInvoice } = useHospital();
   const [selectedStatus, setSelectedStatus] = useState<InvoiceStatus | 'all'>('all');
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -162,10 +162,11 @@ export default function InvoicesScreen() {
 
   const generatePDFContent = (invoice: Invoice): string => {
     const patient = patients.find(p => p.id === invoice.patientId);
-    const hospitalName = 'Klinikum Musterstadt';
-    const hospitalAddress = 'Musterstraße 123, 12345 Musterstadt';
-    const hospitalPhone = '+49 123 456789';
-    const hospitalEmail = 'info@klinikum-musterstadt.de';
+    const hospitalName = hospitalSettings.name;
+    const hospitalAddress = hospitalSettings.address;
+    const hospitalPhone = hospitalSettings.phone;
+    const hospitalEmail = hospitalSettings.email;
+    const hospitalLogo = hospitalSettings.logo;
     
     return `
 <!DOCTYPE html>
@@ -178,7 +179,9 @@ export default function InvoicesScreen() {
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 40px; background: #fff; }
     .header { margin-bottom: 40px; border-bottom: 3px solid #007AFF; padding-bottom: 20px; }
-    .header .hospital-info { margin-bottom: 20px; }
+    .header .hospital-info { margin-bottom: 20px; display: flex; align-items: center; gap: 20px; }
+    .header .hospital-logo { width: 80px; height: 80px; object-fit: contain; }
+    .header .hospital-text { flex: 1; }
     .header .hospital-name { color: #007AFF; font-size: 28px; font-weight: 700; margin-bottom: 8px; }
     .header .hospital-details { color: #666; font-size: 13px; line-height: 1.6; }
     .header h1 { color: #000; font-size: 32px; margin-bottom: 10px; }
@@ -211,10 +214,13 @@ export default function InvoicesScreen() {
 <body>
   <div class="header">
     <div class="hospital-info">
-      <div class="hospital-name">${hospitalName}</div>
-      <div class="hospital-details">
-        ${hospitalAddress}<br>
-        Tel: ${hospitalPhone} | E-Mail: ${hospitalEmail}
+      ${hospitalLogo ? `<img src="${hospitalLogo}" alt="Logo" class="hospital-logo" />` : ''}
+      <div class="hospital-text">
+        <div class="hospital-name">${hospitalName}</div>
+        <div class="hospital-details">
+          ${hospitalAddress}<br>
+          Tel: ${hospitalPhone} | E-Mail: ${hospitalEmail}
+        </div>
       </div>
     </div>
     <h1>Medikamenten-Rechnung</h1>
