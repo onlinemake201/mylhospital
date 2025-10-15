@@ -29,11 +29,11 @@ function LanguageSyncWrapper({ children }: { children: React.ReactNode }) {
   const { setLanguage } = useLanguage();
 
   useEffect(() => {
-    if (hospitalSettings.language) {
+    if (hospitalSettings?.language) {
       console.log('LanguageSyncWrapper: Syncing language to:', hospitalSettings.language);
       setLanguage(hospitalSettings.language);
     }
-  }, [hospitalSettings.language, setLanguage]);
+  }, [hospitalSettings?.language, setLanguage]);
 
   return <>{children}</>;
 }

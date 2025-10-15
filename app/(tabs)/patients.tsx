@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ScrollView, View, Text, StyleSheet, TextInput, TouchableOpacity, Modal, Alert } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { Search, Plus, Filter, X, Edit2, Trash2 } from 'lucide-react-native';
 import { PatientCard } from '@/components/PatientCard';
 import { useHospital } from '@/contexts/HospitalContext';
@@ -8,6 +8,7 @@ import { Patient } from '@/types';
 
 export default function PatientsScreen() {
   const router = useRouter();
+  const { edit } = useLocalSearchParams();
   const { patients, addPatient, updatePatient, deletePatient } = useHospital();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<Patient['status'] | 'all'>('all');
@@ -36,6 +37,30 @@ export default function PatientsScreen() {
 
     return matchesSearch && matchesFilter;
   });
+
+  useEffect(() => {
+    if (edit) {
+      console.log('Edit query param detected:', edit);
+      const patientToEdit = patients.find(p => p.id === edit);
+      if (patientToEdit) {
+        console.log('Found patient to edit:', patientToEdit);
+        setEditingPatient(patientToEdit);
+        setNewPatient({
+          firstName: patientToEdit.firstName,
+          lastName: patientToEdit.lastName,
+          dateOfBirth: patientToEdit.dateOfBirth,
+          gender: patientToEdit.gender,
+          bloodType: patientToEdit.bloodType || '',
+          weight: patientToEdit.weight?.toString() || '',
+          contactNumber: patientToEdit.contactNumber,
+          allergies: patientToEdit.allergies.join(', '),
+          status: patientToEdit.status,
+        });
+        setShowCreateModal(true);
+        router.setParams({ edit: undefined });
+      }
+    }
+  }, [edit, patients]);
 
   const statusFilters: { label: string; value: Patient['status'] | 'all' }[] = [
     { label: 'All', value: 'all' },
@@ -107,17 +132,26 @@ export default function PatientsScreen() {
             {filteredPatients.length} {filteredPatients.length === 1 ? 'patient' : 'patients'}
           </Text>
           {filteredPatients.map(patient => (
-            <View
-              key={patient.id}
-              style={[
-                styles.patientCardWrapper,
-                selectedPatient?.id === patient.id && styles.patientCardSelected
-              ]}
-            >
-              <PatientCard 
-                patient={patient} 
-                onPress={() => router.push(`/patient-details/${patient.id}`)}
-              />
+            <View key={patient.id} style={styles.patientCardContainer}>
+              <TouchableOpacity
+                onPress={() => {
+                  if (selectedPatient?.id === patient.id) {
+                    setSelectedPatient(null);
+                  } else {
+                    setSelectedPatient(patient);
+                  }
+                }}
+                onLongPress={() => router.push(`/patient-details/${patient.id}`)}
+                style={[
+                  styles.patientCardWrapper,
+                  selectedPatient?.id === patient.id && styles.patientCardSelected
+                ]}
+              >
+                <PatientCard 
+                  patient={patient} 
+                  onPress={() => router.push(`/patient-details/${patient.id}`)}
+                />
+              </TouchableOpacity>
             </View>
           ))}
         </ScrollView>
@@ -685,13 +719,16 @@ const styles = StyleSheet.create({
     fontWeight: '600' as const,
     color: '#000000',
   },
+  patientCardContainer: {
+    marginBottom: 12,
+  },
   patientCardWrapper: {
-    marginBottom: 0,
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   patientCardSelected: {
     borderWidth: 2,
     borderColor: '#007AFF',
-    borderRadius: 12,
   },
   statusButtons: {
     flexDirection: 'row',

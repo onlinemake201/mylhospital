@@ -750,11 +750,18 @@ export default function PatientDetailsScreen() {
               <ScrollView style={styles.fileModalBody}>
                 {viewFileModal.type === 'image' ? (
                   <View style={styles.fullImageContainer}>
-                    <Image 
-                      source={{ uri: viewFileModal.url }} 
-                      style={styles.fullImage} 
-                      resizeMode="contain" 
-                    />
+                    {viewFileModal.url && viewFileModal.url.trim() !== '' ? (
+                      <Image 
+                        source={{ uri: viewFileModal.url }} 
+                        style={styles.fullImage} 
+                        resizeMode="contain" 
+                      />
+                    ) : (
+                      <View style={styles.emptyImagePlaceholder}>
+                        <FileImage size={64} color="#8E8E93" />
+                        <Text style={styles.emptyImageText}>Bild nicht verfügbar</Text>
+                      </View>
+                    )}
                   </View>
                 ) : (
                   <View style={styles.documentInfoContainer}>
@@ -1306,6 +1313,16 @@ const styles = StyleSheet.create({
     minHeight: 300,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  emptyImagePlaceholder: {
+    padding: 40,
+    alignItems: 'center',
+    gap: 12,
+  },
+  emptyImageText: {
+    fontSize: 16,
+    color: '#8E8E93',
+    textAlign: 'center',
   },
   fullImage: {
     width: '100%',
