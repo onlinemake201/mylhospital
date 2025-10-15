@@ -27,7 +27,16 @@ export default function PatientDetailsScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [expandedVisit, setExpandedVisit] = useState<string | null>(null);
 
-  const [newVisit, setNewVisit] = useState({
+  const [newVisit, setNewVisit] = useState<{
+    date: string;
+    time: string;
+    chiefComplaint: string;
+    diagnosis: string;
+    treatment: string;
+    prescriptions: string;
+    notes: string;
+    category: 'consultation' | 'follow_up' | 'emergency' | 'procedure';
+  }>({
     date: new Date().toISOString().split('T')[0],
     time: new Date().toTimeString().split(' ')[0].substring(0, 5),
     chiefComplaint: '',
@@ -35,15 +44,21 @@ export default function PatientDetailsScreen() {
     treatment: '',
     prescriptions: '',
     notes: '',
-    category: 'consultation' as const,
+    category: 'consultation',
   });
 
-  const [newFile, setNewFile] = useState({
+  const [newFile, setNewFile] = useState<{
+    name: string;
+    category: string;
+    notes: string;
+    uri: string;
+    type: 'document' | 'image';
+  }>({
     name: '',
     category: 'report',
     notes: '',
     uri: '',
-    type: 'document' as const,
+    type: 'document',
   });
 
   const isDoctor = user?.role === 'doctor' || user?.role === 'superadmin';
@@ -140,7 +155,7 @@ export default function PatientDetailsScreen() {
           ...newFile,
           name: asset.fileName || `image_${Date.now()}.jpg`,
           uri: asset.uri,
-          type: 'image' as const,
+          type: 'image',
         });
       }
     } catch (error) {
@@ -449,7 +464,7 @@ export default function PatientDetailsScreen() {
                         styles.categoryButton,
                         newVisit.category === cat && styles.categoryButtonActive,
                       ]}
-                      onPress={() => setNewVisit({ ...newVisit, category: cat as 'consultation' | 'follow_up' | 'emergency' | 'procedure' })}
+                onPress={() => setNewVisit({ ...newVisit, category: cat })}
                     >
                       <Text
                         style={[

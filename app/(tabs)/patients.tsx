@@ -141,7 +141,7 @@ export default function PatientsScreen() {
                     setSelectedPatient(patient);
                   }
                 }}
-                onLongPress={() => router.push(`/patient-details/${patient.id}`)}
+                onLongPress={() => router.push(`/(tabs)/patient-details/${patient.id}`)}
                 style={[
                   styles.patientCardWrapper,
                   selectedPatient?.id === patient.id && styles.patientCardSelected
@@ -149,7 +149,7 @@ export default function PatientsScreen() {
               >
                 <PatientCard 
                   patient={patient} 
-                  onPress={() => router.push(`/patient-details/${patient.id}`)}
+                  onPress={() => router.push(`/(tabs)/patient-details/${patient.id}`)}
                 />
               </TouchableOpacity>
             </View>
