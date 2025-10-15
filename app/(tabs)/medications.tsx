@@ -1,13 +1,26 @@
 import React, { useState } from 'react';
 import { ScrollView, View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
 import { Stack } from 'expo-router';
-import { Pill, Clock, User, Plus, X, Edit2, Trash2, FileText } from 'lucide-react-native';
+import { Pill, Clock, User, Plus, X, Edit2, Trash2, FileText, Search } from 'lucide-react-native';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { useHospital } from '@/contexts/HospitalContext';
 import { Medication, MedicationRegistry } from '@/types';
 
 type TabType = 'registry' | 'assignment' | 'billing';
+
+const frequencyOptions = [
+  '1x pro Tag',
+  '2x pro Tag',
+  '3x pro Tag',
+  '4x pro Tag',
+  'Alle 4 Stunden',
+  'Alle 6 Stunden',
+  'Alle 8 Stunden',
+  'Alle 12 Stunden',
+  'Bei Bedarf',
+  'Andere',
+];
 
 export default function MedicationsScreen() {
   const { 
@@ -25,6 +38,10 @@ export default function MedicationsScreen() {
   
   const [activeTab, setActiveTab] = useState<TabType>('registry');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [registrySearchQuery, setRegistrySearchQuery] = useState('');
+  const [patientSearchQuery, setPatientSearchQuery] = useState('');
+  const [medicationSearchQuery, setMedicationSearchQuery] = useState('');
+  const [billingPatientSearchQuery, setBillingPatientSearchQuery] = useState('');
   const [editingMedication, setEditingMedication] = useState<MedicationRegistry | null>(null);
   const [selectedMedication, setSelectedMedication] = useState<MedicationRegistry | null>(null);
   const [newMedication, setNewMedication] = useState({
@@ -247,6 +264,34 @@ export default function MedicationsScreen() {
     );
   };
 
+  const filteredRegistry = medicationRegistry.filter(med => {
+    const query = registrySearchQuery.toLowerCase().trim();
+    return med.name.toLowerCase().includes(query) || med.dosage.toLowerCase().includes(query);
+  });
+
+  const filteredPatients = patients.filter(patient => {
+    const query = patientSearchQuery.toLowerCase().trim();
+    return (
+      patient.firstName.toLowerCase().includes(query) ||
+      patient.lastName.toLowerCase().includes(query) ||
+      patient.mrn.toLowerCase().includes(query)
+    );
+  });
+
+  const filteredMedications = medicationRegistry.filter(m => m.stockQuantity > 0).filter(med => {
+    const query = medicationSearchQuery.toLowerCase().trim();
+    return med.name.toLowerCase().includes(query) || med.dosage.toLowerCase().includes(query);
+  });
+
+  const filteredBillingPatients = patients.filter(patient => {
+    const query = billingPatientSearchQuery.toLowerCase().trim();
+    return (
+      patient.firstName.toLowerCase().includes(query) ||
+      patient.lastName.toLowerCase().includes(query) ||
+      patient.mrn.toLowerCase().includes(query)
+    );
+  });
+
   const renderRegistryTab = () => (
     <ScrollView style={styles.tabContent} contentContainerStyle={styles.tabContentPadding}>
       <View style={styles.tabHeader}>
@@ -260,11 +305,29 @@ export default function MedicationsScreen() {
         </TouchableOpacity>
       </View>
 
+      <View style={styles.searchContainer}>
+        <View style={styles.searchBar}>
+          <Search size={20} color="#8E8E93" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Nach Medikament suchen..."
+            value={registrySearchQuery}
+            onChangeText={setRegistrySearchQuery}
+            placeholderTextColor="#8E8E93"
+          />
+          {registrySearchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setRegistrySearchQuery('')}>
+              <X size={18} color="#8E8E93" />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
       <Text style={styles.resultCount}>
-        {medicationRegistry.length} {medicationRegistry.length === 1 ? 'Medikament' : 'Medikamente'}
+        {filteredRegistry.length} {filteredRegistry.length === 1 ? 'Medikament' : 'Medikamente'}
       </Text>
 
-      {medicationRegistry.map(med => {
+      {filteredRegistry.map(med => {
         const status = getStockStatus(med);
         return (
           <TouchableOpacity
@@ -360,8 +423,23 @@ export default function MedicationsScreen() {
       <Card style={styles.formCard}>
         <View style={styles.formGroup}>
           <Text style={styles.label}>Patient auswählen *</Text>
+          <View style={styles.searchBar}>
+            <Search size={18} color="#8E8E93" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Patient suchen..."
+              value={patientSearchQuery}
+              onChangeText={setPatientSearchQuery}
+              placeholderTextColor="#8E8E93"
+            />
+            {patientSearchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setPatientSearchQuery('')}>
+                <X size={16} color="#8E8E93" />
+              </TouchableOpacity>
+            )}
+          </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {patients.map(patient => (
+            {filteredPatients.map(patient => (
               <TouchableOpacity
                 key={patient.id}
                 style={[
@@ -385,8 +463,23 @@ export default function MedicationsScreen() {
 
         <View style={styles.formGroup}>
           <Text style={styles.label}>Medikament aus Register *</Text>
+          <View style={styles.searchBar}>
+            <Search size={18} color="#8E8E93" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Medikament suchen..."
+              value={medicationSearchQuery}
+              onChangeText={setMedicationSearchQuery}
+              placeholderTextColor="#8E8E93"
+            />
+            {medicationSearchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setMedicationSearchQuery('')}>
+                <X size={16} color="#8E8E93" />
+              </TouchableOpacity>
+            )}
+          </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {medicationRegistry.filter(m => m.stockQuantity > 0).map(med => (
+            {filteredMedications.map(med => (
               <TouchableOpacity
                 key={med.id}
                 style={[
@@ -410,12 +503,35 @@ export default function MedicationsScreen() {
 
         <View style={styles.formGroup}>
           <Text style={styles.label}>Häufigkeit *</Text>
-          <TextInput
-            style={styles.input}
-            value={assignmentData.frequency}
-            onChangeText={(text) => setAssignmentData({ ...assignmentData, frequency: text })}
-            placeholder="z.B. 2x täglich"
-          />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.frequencyScroll}>
+            {frequencyOptions.map((freq) => (
+              <TouchableOpacity
+                key={freq}
+                style={[
+                  styles.frequencyChip,
+                  assignmentData.frequency === freq && styles.frequencyChipActive,
+                ]}
+                onPress={() => setAssignmentData({ ...assignmentData, frequency: freq })}
+              >
+                <Text
+                  style={[
+                    styles.frequencyChipText,
+                    assignmentData.frequency === freq && styles.frequencyChipTextActive,
+                  ]}
+                >
+                  {freq}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          {assignmentData.frequency === 'Andere' && (
+            <TextInput
+              style={[styles.input, { marginTop: 12 }]}
+              value={assignmentData.frequency !== 'Andere' ? '' : assignmentData.frequency}
+              onChangeText={(text) => setAssignmentData({ ...assignmentData, frequency: text })}
+              placeholder="Benutzerdefinierte Häufigkeit eingeben"
+            />
+          )}
         </View>
 
         <View style={styles.formGroup}>
@@ -490,8 +606,23 @@ export default function MedicationsScreen() {
         <Card style={styles.formCard}>
           <View style={styles.formGroup}>
             <Text style={styles.label}>Patient auswählen *</Text>
+            <View style={styles.searchBar}>
+              <Search size={18} color="#8E8E93" />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Patient suchen..."
+                value={billingPatientSearchQuery}
+                onChangeText={setBillingPatientSearchQuery}
+                placeholderTextColor="#8E8E93"
+              />
+              {billingPatientSearchQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setBillingPatientSearchQuery('')}>
+                  <X size={16} color="#8E8E93" />
+                </TouchableOpacity>
+              )}
+            </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {patients.map(patient => (
+              {filteredBillingPatients.map(patient => (
                 <TouchableOpacity
                   key={patient.id}
                   style={[
@@ -1029,6 +1160,45 @@ const styles = StyleSheet.create({
     color: '#000000',
   },
   medChipTextActive: {
+    color: '#FFFFFF',
+  },
+  searchContainer: {
+    marginBottom: 16,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 8,
+    marginBottom: 12,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#000000',
+  },
+  frequencyScroll: {
+    maxHeight: 50,
+  },
+  frequencyChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: '#F2F2F7',
+    marginRight: 8,
+  },
+  frequencyChipActive: {
+    backgroundColor: '#34C759',
+  },
+  frequencyChipText: {
+    fontSize: 14,
+    fontWeight: '500' as const,
+    color: '#000000',
+  },
+  frequencyChipTextActive: {
     color: '#FFFFFF',
   },
   assignButton: {

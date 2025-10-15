@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { ScrollView, View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, TouchableOpacity, Alert, Image } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { LogOut, Calendar, Clock, MapPin } from 'lucide-react-native';
 import { Card } from '@/components/ui/Card';
@@ -10,7 +10,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function DashboardScreen() {
   const { user, logout } = useAuth();
-  const { appointments } = useHospital();
+  const { appointments, hospitalSettings } = useHospital();
   const { t } = useLanguage();
   const router = useRouter();
 
@@ -75,6 +75,15 @@ export default function DashboardScreen() {
       />
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         <View style={styles.header}>
+          {hospitalSettings.logo && (
+            <View style={styles.logoContainer}>
+              <Image 
+                source={{ uri: hospitalSettings.logo }} 
+                style={styles.logo}
+                resizeMode="contain"
+              />
+            </View>
+          )}
           <Text style={styles.greeting}>{t.dashboard.welcomeBack}</Text>
           <Text style={styles.name}>{user?.name}</Text>
           <Badge label={user?.role || 'User'} variant="info" style={styles.roleBadge} />
@@ -157,6 +166,14 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 24,
+  },
+  logoContainer: {
+    marginBottom: 16,
+    alignItems: 'flex-start',
+  },
+  logo: {
+    width: 120,
+    height: 60,
   },
   greeting: {
     fontSize: 16,

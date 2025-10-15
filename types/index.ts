@@ -33,6 +33,7 @@ export interface Patient {
   dateOfBirth: string;
   gender: 'male' | 'female' | 'other';
   bloodType?: string;
+  weight?: number;
   allergies: string[];
   insurance?: Insurance;
   contactNumber: string;

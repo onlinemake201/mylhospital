@@ -20,6 +20,7 @@ export default function PatientsScreen() {
     dateOfBirth: '',
     gender: 'male' as 'male' | 'female' | 'other',
     bloodType: '',
+    weight: '',
     contactNumber: '',
     allergies: '',
     status: 'outpatient' as Patient['status'],
@@ -142,6 +143,7 @@ export default function PatientsScreen() {
                     dateOfBirth: selectedPatient.dateOfBirth,
                     gender: selectedPatient.gender,
                     bloodType: selectedPatient.bloodType || '',
+                    weight: selectedPatient.weight?.toString() || '',
                     contactNumber: selectedPatient.contactNumber,
                     allergies: selectedPatient.allergies.join(', '),
                     status: selectedPatient.status,
@@ -278,6 +280,17 @@ export default function PatientsScreen() {
                 </View>
 
                 <View style={styles.formGroup}>
+                  <Text style={styles.label}>Gewicht (KG)</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={newPatient.weight}
+                    onChangeText={(text) => setNewPatient({ ...newPatient, weight: text })}
+                    placeholder="z.B. 75"
+                    keyboardType="decimal-pad"
+                  />
+                </View>
+
+                <View style={styles.formGroup}>
                   <Text style={styles.label}>Telefonnummer *</Text>
                   <TextInput
                     style={styles.input}
@@ -354,6 +367,7 @@ export default function PatientsScreen() {
                           dateOfBirth: newPatient.dateOfBirth,
                           gender: newPatient.gender,
                           bloodType: newPatient.bloodType || undefined,
+                          weight: newPatient.weight ? parseFloat(newPatient.weight) : undefined,
                           contactNumber: newPatient.contactNumber,
                           allergies: newPatient.allergies ? newPatient.allergies.split(',').map(a => a.trim()).filter(a => a) : [],
                           status: newPatient.status,
@@ -369,6 +383,7 @@ export default function PatientsScreen() {
                           dateOfBirth: newPatient.dateOfBirth,
                           gender: newPatient.gender,
                           bloodType: newPatient.bloodType || undefined,
+                          weight: newPatient.weight ? parseFloat(newPatient.weight) : undefined,
                           contactNumber: newPatient.contactNumber,
                           allergies: newPatient.allergies ? newPatient.allergies.split(',').map(a => a.trim()).filter(a => a) : [],
                           status: newPatient.status,
@@ -387,6 +402,7 @@ export default function PatientsScreen() {
                         dateOfBirth: '',
                         gender: 'male',
                         bloodType: '',
+                        weight: '',
                         contactNumber: '',
                         allergies: '',
                         status: 'outpatient',

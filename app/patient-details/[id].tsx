@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { ScrollView, View, Text, StyleSheet, TouchableOpacity, TextInput, Modal, Alert } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, TouchableOpacity, TextInput, Modal, Alert, Image } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { ArrowLeft, FileText, Upload, Calendar, FileImage, ChevronDown, ChevronUp, X } from 'lucide-react-native';
+import { ArrowLeft, FileText, Upload, Calendar, FileImage, ChevronDown, ChevronUp, X, Trash2 } from 'lucide-react-native';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { useHospital } from '@/contexts/HospitalContext';
@@ -593,7 +593,63 @@ export default function PatientDetailsScreen() {
 
               {newFile.uri && (
                 <View style={styles.selectedFilePreview}>
-                  <Text style={styles.selectedFileName}>{newFile.name}</Text>
+                  {newFile.type === 'image' ? (
+                    <View style={styles.imagePreviewContainer}>
+                      <Image source={{ uri: newFile.uri }} style={styles.imagePreview} resizeMode="cover" />
+                      <View style={styles.imagePreviewOverlay}>
+                        <Text style={styles.selectedFileName}>{newFile.name}</Text>
+                        <View style={styles.imageActions}>
+                          <TouchableOpacity
+                            style={styles.replaceButton}
+                            onPress={handlePickImage}
+                          >
+                            <Upload size={16} color="#007AFF" />
+                            <Text style={styles.replaceButtonText}>Ersetzen</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={styles.deleteFileButton}
+                            onPress={() => setNewFile({
+                              name: '',
+                              category: 'report',
+                              notes: '',
+                              uri: undefined,
+                              type: 'document',
+                            })}
+                          >
+                            <Trash2 size={16} color="#FF3B30" />
+                            <Text style={styles.deleteFileButtonText}>Löschen</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    </View>
+                  ) : (
+                    <View style={styles.documentPreview}>
+                      <FileText size={24} color="#007AFF" />
+                      <Text style={styles.selectedFileName}>{newFile.name}</Text>
+                      <View style={styles.documentActions}>
+                        <TouchableOpacity
+                          style={styles.replaceButton}
+                          onPress={handlePickDocument}
+                        >
+                          <Upload size={16} color="#007AFF" />
+                          <Text style={styles.replaceButtonText}>Ersetzen</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.deleteFileButton}
+                          onPress={() => setNewFile({
+                            name: '',
+                            category: 'report',
+                            notes: '',
+                            uri: undefined,
+                            type: 'document',
+                          })}
+                        >
+                          <Trash2 size={16} color="#FF3B30" />
+                          <Text style={styles.deleteFileButtonText}>Löschen</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  )}
                 </View>
               )}
 
@@ -1008,13 +1064,71 @@ const styles = StyleSheet.create({
   selectedFilePreview: {
     marginHorizontal: 20,
     marginBottom: 20,
-    padding: 12,
-    backgroundColor: '#E5F3FF',
+    backgroundColor: '#F2F2F7',
     borderRadius: 12,
+    overflow: 'hidden',
+  },
+  imagePreviewContainer: {
+    position: 'relative',
+  },
+  imagePreview: {
+    width: '100%',
+    height: 200,
+  },
+  imagePreviewOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    padding: 12,
   },
   selectedFileName: {
     fontSize: 14,
-    color: '#007AFF',
+    color: '#FFFFFF',
     fontWeight: '500' as const,
+    marginBottom: 8,
+  },
+  imageActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  documentPreview: {
+    padding: 16,
+    alignItems: 'center',
+    gap: 12,
+  },
+  documentActions: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  replaceButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#E5F3FF',
+    borderRadius: 8,
+  },
+  replaceButtonText: {
+    fontSize: 13,
+    fontWeight: '600' as const,
+    color: '#007AFF',
+  },
+  deleteFileButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#FFE5E5',
+    borderRadius: 8,
+  },
+  deleteFileButtonText: {
+    fontSize: 13,
+    fontWeight: '600' as const,
+    color: '#FF3B30',
   },
 });
