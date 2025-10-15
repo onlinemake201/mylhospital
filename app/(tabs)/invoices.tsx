@@ -9,16 +9,18 @@ import {
   Alert,
   Platform,
 } from 'react-native';
-import { Stack } from 'expo-router';
-import { Plus, FileText, Download, Eye, Trash2, X } from 'lucide-react-native';
+import { Stack, Redirect } from 'expo-router';
+import { Plus, FileText, Download, Eye, Trash2, X, TrendingUp, TrendingDown, DollarSign, Clock } from 'lucide-react-native';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { useHospital } from '@/contexts/HospitalContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Invoice, InvoiceItem } from '@/types';
 
 type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
 
 export default function InvoicesScreen() {
+  const { user } = useAuth();
   const { patients, medications, invoices, updateInvoice, deleteInvoice } = useHospital();
   const [selectedStatus, setSelectedStatus] = useState<InvoiceStatus | 'all'>('all');
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
@@ -32,6 +34,60 @@ export default function InvoicesScreen() {
     }
     return invoices.filter(inv => inv.status === selectedStatus);
   }, [invoices, selectedStatus]);
+
+  const monthlyStats = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    const thisMonthInvoices = invoices.filter(inv => {
+      const invDate = new Date(inv.date);
+      return invDate.getMonth() === currentMonth && invDate.getFullYear() === currentYear;
+    });
+
+    const paidThisMonth = thisMonthInvoices
+      .filter(inv => inv.status === 'paid')
+      .reduce((sum, inv) => sum + inv.total, 0);
+
+    const sentThisMonth = thisMonthInvoices
+      .filter(inv => inv.status === 'sent')
+      .reduce((sum, inv) => sum + inv.total, 0);
+
+    const overdueTotal = invoices
+      .filter(inv => inv.status === 'overdue')
+      .reduce((sum, inv) => sum + inv.total, 0);
+
+    const draftTotal = invoices
+      .filter(inv => inv.status === 'draft')
+      .reduce((sum, inv) => sum + inv.total, 0);
+
+    const lastMonth = new Date(currentYear, currentMonth - 1);
+    const lastMonthInvoices = invoices.filter(inv => {
+      const invDate = new Date(inv.date);
+      return invDate.getMonth() === lastMonth.getMonth() && invDate.getFullYear() === lastMonth.getFullYear();
+    });
+
+    const paidLastMonth = lastMonthInvoices
+      .filter(inv => inv.status === 'paid')
+      .reduce((sum, inv) => sum + inv.total, 0);
+
+    const percentageChange = paidLastMonth > 0 
+      ? ((paidThisMonth - paidLastMonth) / paidLastMonth) * 100 
+      : 0;
+
+    return {
+      paidThisMonth,
+      sentThisMonth,
+      overdueTotal,
+      draftTotal,
+      percentageChange,
+      totalInvoicesThisMonth: thisMonthInvoices.length,
+    };
+  }, [invoices]);
+
+  if (user?.role !== 'superadmin') {
+    return <Redirect href="/" />;
+  }
 
   const statusTabs: { label: string; value: InvoiceStatus | 'all'; count: number }[] = [
     { label: 'Alle', value: 'all', count: invoices.length },
@@ -72,10 +128,6 @@ export default function InvoicesScreen() {
         medicationId: medId,
       };
     }).filter(Boolean) as InvoiceItem[];
-
-    const subtotal = items.reduce((sum, item) => sum + item.total, 0);
-    const tax = subtotal * 0.19;
-    const total = subtotal + tax;
 
     Alert.alert('Info', 'Bitte verwenden Sie die Medikamenten-Seite (Tab "Rechnung"), um Rechnungen zu erstellen.');
     setShowCreateModal(false);
@@ -272,12 +324,79 @@ export default function InvoicesScreen() {
         }}
       />
       <View style={styles.container}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.tabsScroll}
-          contentContainerStyle={styles.tabsContent}
-        >
+        <ScrollView style={styles.mainScroll}>
+          <View style={styles.statsContainer}>
+            <View style={styles.statsGrid}>
+              <Card style={styles.statCard}>
+                <View style={styles.statHeader}>
+                  <View style={styles.statIconContainer}>
+                    <DollarSign size={20} color="#34C759" />
+                  </View>
+                  <Text style={styles.statLabel}>Bezahlt (Monat)</Text>
+                </View>
+                <Text style={styles.statValue}>€{monthlyStats.paidThisMonth.toFixed(2)}</Text>
+                <View style={styles.statChange}>
+                  {monthlyStats.percentageChange >= 0 ? (
+                    <TrendingUp size={14} color="#34C759" />
+                  ) : (
+                    <TrendingDown size={14} color="#FF3B30" />
+                  )}
+                  <Text style={[
+                    styles.statChangeText,
+                    { color: monthlyStats.percentageChange >= 0 ? '#34C759' : '#FF3B30' }
+                  ]}>
+                    {Math.abs(monthlyStats.percentageChange).toFixed(1)}%
+                  </Text>
+                </View>
+              </Card>
+
+              <Card style={styles.statCard}>
+                <View style={styles.statHeader}>
+                  <View style={[styles.statIconContainer, { backgroundColor: '#E5F3FF' }]}>
+                    <FileText size={20} color="#007AFF" />
+                  </View>
+                  <Text style={styles.statLabel}>Versendet</Text>
+                </View>
+                <Text style={styles.statValue}>€{monthlyStats.sentThisMonth.toFixed(2)}</Text>
+                <Text style={styles.statSubtext}>
+                  {invoices.filter(i => i.status === 'sent').length} Rechnungen
+                </Text>
+              </Card>
+
+              <Card style={styles.statCard}>
+                <View style={styles.statHeader}>
+                  <View style={[styles.statIconContainer, { backgroundColor: '#FFE5E5' }]}>
+                    <Clock size={20} color="#FF3B30" />
+                  </View>
+                  <Text style={styles.statLabel}>Überfällig</Text>
+                </View>
+                <Text style={[styles.statValue, { color: '#FF3B30' }]}>€{monthlyStats.overdueTotal.toFixed(2)}</Text>
+                <Text style={styles.statSubtext}>
+                  {invoices.filter(i => i.status === 'overdue').length} Rechnungen
+                </Text>
+              </Card>
+
+              <Card style={styles.statCard}>
+                <View style={styles.statHeader}>
+                  <View style={[styles.statIconContainer, { backgroundColor: '#F2F2F7' }]}>
+                    <FileText size={20} color="#8E8E93" />
+                  </View>
+                  <Text style={styles.statLabel}>Entwürfe</Text>
+                </View>
+                <Text style={styles.statValue}>€{monthlyStats.draftTotal.toFixed(2)}</Text>
+                <Text style={styles.statSubtext}>
+                  {invoices.filter(i => i.status === 'draft').length} Rechnungen
+                </Text>
+              </Card>
+            </View>
+          </View>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.tabsScroll}
+            contentContainerStyle={styles.tabsContent}
+          >
           {statusTabs.map(tab => (
             <TouchableOpacity
               key={tab.value}
@@ -308,9 +427,9 @@ export default function InvoicesScreen() {
               </View>
             </TouchableOpacity>
           ))}
-        </ScrollView>
+          </ScrollView>
 
-        <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
+          <View style={styles.listContainer}>
           <Text style={styles.resultCount}>
             {filteredInvoices.length} {filteredInvoices.length === 1 ? 'Rechnung' : 'Rechnungen'}
           </Text>
@@ -440,6 +559,7 @@ export default function InvoicesScreen() {
               </Text>
             </View>
           )}
+          </View>
         </ScrollView>
 
         <Modal
@@ -558,9 +678,67 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F2F2F7',
   },
+  mainScroll: {
+    flex: 1,
+  },
+  statsContainer: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5EA',
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  statCard: {
+    flex: 1,
+    minWidth: 160,
+    padding: 16,
+  },
+  statHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  statIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#E5F9E5',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  statLabel: {
+    fontSize: 13,
+    color: '#8E8E93',
+    fontWeight: '500' as const,
+    flex: 1,
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: '700' as const,
+    color: '#000000',
+    marginBottom: 4,
+  },
+  statChange: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  statChangeText: {
+    fontSize: 13,
+    fontWeight: '600' as const,
+  },
+  statSubtext: {
+    fontSize: 12,
+    color: '#8E8E93',
+  },
   tabsScroll: {
     maxHeight: 60,
-    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5EA',
   },
@@ -607,10 +785,7 @@ const styles = StyleSheet.create({
   tabBadgeTextActive: {
     color: '#FFFFFF',
   },
-  list: {
-    flex: 1,
-  },
-  listContent: {
+  listContainer: {
     padding: 16,
   },
   resultCount: {

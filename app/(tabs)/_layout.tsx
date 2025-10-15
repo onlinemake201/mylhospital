@@ -2,10 +2,14 @@
 import { Tabs } from "expo-router";
 import { LayoutDashboard, Users, Calendar, Pill, FlaskConical, AlertCircle, Settings, UserCircle, FileText } from "lucide-react-native";
 import React from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 import Colors from "@/constants/colors";
 
 export default function TabLayout() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'superadmin';
+
   return (
     <Tabs
       screenOptions={{
@@ -69,6 +73,7 @@ export default function TabLayout() {
         options={{
           title: "Invoices",
           tabBarIcon: ({ color }) => <FileText size={24} color={color} />,
+          href: isAdmin ? undefined : null,
         }}
       />
       <Tabs.Screen
