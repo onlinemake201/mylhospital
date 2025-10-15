@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { ScrollView, View, Text, StyleSheet, TouchableOpacity, TextInput, Modal, Alert, Image } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, TouchableOpacity, TextInput, Modal, Alert, Image, Linking } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { ArrowLeft, FileText, Upload, Calendar, FileImage, ChevronDown, ChevronUp, X, Trash2 } from 'lucide-react-native';
+import { ArrowLeft, FileText, Upload, Calendar, FileImage, ChevronDown, ChevronUp, X, Trash2, Edit2, Eye } from 'lucide-react-native';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { useHospital } from '@/contexts/HospitalContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { PatientVisit, PatientFile } from '@/types';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -14,7 +15,8 @@ export default function PatientDetailsScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const { user } = useAuth();
-  const { patients, patientVisits, patientFiles, addPatientVisit, addPatientFile } = useHospital();
+  const { t } = useLanguage();
+  const { patients, patientVisits, patientFiles, addPatientVisit, addPatientFile, deletePatientFile } = useHospital();
   
   const patient = patients.find(p => p.id === id);
   const visits = patientVisits.filter((v: PatientVisit) => v.patientId === id).sort((a: PatientVisit, b: PatientVisit) => 
@@ -26,6 +28,7 @@ export default function PatientDetailsScreen() {
   const [showUploadFile, setShowUploadFile] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [expandedVisit, setExpandedVisit] = useState<string | null>(null);
+  const [viewFileModal, setViewFileModal] = useState<PatientFile | null>(null);
 
   const [newVisit, setNewVisit] = useState<{
     date: string;
@@ -204,6 +207,15 @@ export default function PatientDetailsScreen() {
           headerLeft: () => (
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
               <ArrowLeft size={24} color="#007AFF" />
+            </TouchableOpacity>
+          ),
+          headerRight: () => (
+            <TouchableOpacity 
+              onPress={() => router.push(`/patients?edit=${id}`)}
+              style={styles.editButton}
+            >
+              <Edit2 size={20} color="#007AFF" />
+              <Text style={styles.editButtonText}>{t.common.edit}</Text>
             </TouchableOpacity>
           ),
         }}
@@ -390,20 +402,27 @@ export default function PatientDetailsScreen() {
                    category === 'prescription' ? 'Rezepte' : 'Sonstiges'}
                 </Text>
                 {categoryFiles.map(file => (
-                  <Card key={file.id} style={styles.fileCard}>
-                    <View style={styles.fileInfo}>
-                      <FileImage size={24} color="#007AFF" />
-                      <View style={styles.fileDetails}>
-                        <Text style={styles.fileName}>{file.name}</Text>
-                        <Text style={styles.fileMetadata}>
-                          {file.uploadedAt.split('T')[0]} • {file.uploadedBy}
-                        </Text>
-                        {file.notes && (
-                          <Text style={styles.fileNotes}>{file.notes}</Text>
-                        )}
+                  <TouchableOpacity 
+                    key={file.id} 
+                    onPress={() => setViewFileModal(file)}
+                    activeOpacity={0.7}
+                  >
+                    <Card style={styles.fileCard}>
+                      <View style={styles.fileInfo}>
+                        <FileImage size={24} color="#007AFF" />
+                        <View style={styles.fileDetails}>
+                          <Text style={styles.fileName}>{file.name}</Text>
+                          <Text style={styles.fileMetadata}>
+                            {file.uploadedAt.split('T')[0]} • {file.uploadedBy}
+                          </Text>
+                          {file.notes && (
+                            <Text style={styles.fileNotes}>{file.notes}</Text>
+                          )}
+                        </View>
+                        <Eye size={20} color="#8E8E93" />
                       </View>
-                    </View>
-                  </Card>
+                    </Card>
+                  </TouchableOpacity>
                 ))}
               </View>
             );
@@ -707,6 +726,114 @@ export default function PatientDetailsScreen() {
               >
                 <Text style={styles.confirmButtonText}>Hochladen</Text>
               </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={viewFileModal !== null}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setViewFileModal(null)}
+      >
+        <View style={styles.fileModalOverlay}>
+          <View style={styles.fileModalContent}>
+            <View style={styles.fileModalHeader}>
+              <Text style={styles.fileModalTitle}>{viewFileModal?.name}</Text>
+              <TouchableOpacity onPress={() => setViewFileModal(null)}>
+                <X size={24} color="#8E8E93" />
+              </TouchableOpacity>
+            </View>
+
+            {viewFileModal && (
+              <ScrollView style={styles.fileModalBody}>
+                {viewFileModal.type === 'image' ? (
+                  <View style={styles.fullImageContainer}>
+                    <Image 
+                      source={{ uri: viewFileModal.url }} 
+                      style={styles.fullImage} 
+                      resizeMode="contain" 
+                    />
+                  </View>
+                ) : (
+                  <View style={styles.documentInfoContainer}>
+                    <FileText size={64} color="#007AFF" />
+                    <Text style={styles.documentName}>{viewFileModal.name}</Text>
+                    <Text style={styles.documentCategory}>
+                      {viewFileModal.category === 'report' ? 'Bericht' :
+                       viewFileModal.category === 'lab' ? 'Laborbefund' :
+                       viewFileModal.category === 'imaging' ? 'Bildgebung' :
+                       viewFileModal.category === 'prescription' ? 'Rezept' : 'Sonstiges'}
+                    </Text>
+                  </View>
+                )}
+
+                <View style={styles.fileModalDetails}>
+                  <View style={styles.fileModalDetailRow}>
+                    <Text style={styles.fileModalDetailLabel}>Hochgeladen von:</Text>
+                    <Text style={styles.fileModalDetailValue}>{viewFileModal.uploadedBy}</Text>
+                  </View>
+                  <View style={styles.fileModalDetailRow}>
+                    <Text style={styles.fileModalDetailLabel}>Datum:</Text>
+                    <Text style={styles.fileModalDetailValue}>
+                      {viewFileModal.uploadedAt.split('T')[0]}
+                    </Text>
+                  </View>
+                  {viewFileModal.notes && (
+                    <View style={styles.fileModalDetailRow}>
+                      <Text style={styles.fileModalDetailLabel}>Notizen:</Text>
+                      <Text style={styles.fileModalDetailValue}>{viewFileModal.notes}</Text>
+                    </View>
+                  )}
+                </View>
+              </ScrollView>
+            )}
+
+            <View style={styles.fileModalActions}>
+              {viewFileModal && viewFileModal.type !== 'image' && (
+                <TouchableOpacity
+                  style={[styles.fileModalButton, styles.openButton]}
+                  onPress={() => {
+                    if (viewFileModal.url) {
+                      Linking.openURL(viewFileModal.url).catch(() => {
+                        Alert.alert('Fehler', 'Datei konnte nicht geöffnet werden');
+                      });
+                    }
+                  }}
+                >
+                  <Eye size={20} color="#007AFF" />
+                  <Text style={styles.openButtonText}>Öffnen</Text>
+                </TouchableOpacity>
+              )}
+              {isDoctor && (
+                <TouchableOpacity
+                  style={[styles.fileModalButton, styles.deleteButton]}
+                  onPress={() => {
+                    Alert.alert(
+                      'Datei löschen',
+                      'Möchten Sie diese Datei wirklich löschen?',
+                      [
+                        { text: 'Abbrechen', style: 'cancel' },
+                        {
+                          text: 'Löschen',
+                          style: 'destructive',
+                          onPress: () => {
+                            if (viewFileModal) {
+                              deletePatientFile(viewFileModal.id);
+                              setViewFileModal(null);
+                              Alert.alert('Erfolg', 'Datei gelöscht');
+                            }
+                          },
+                        },
+                      ]
+                    );
+                  }}
+                >
+                  <Trash2 size={20} color="#FF3B30" />
+                  <Text style={styles.deleteButtonText}>Löschen</Text>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
         </View>
@@ -1128,6 +1255,133 @@ const styles = StyleSheet.create({
   },
   deleteFileButtonText: {
     fontSize: 13,
+    fontWeight: '600' as const,
+    color: '#FF3B30',
+  },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginRight: 8,
+    padding: 8,
+  },
+  editButtonText: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: '#007AFF',
+  },
+  fileModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fileModalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    width: '90%',
+    maxWidth: 600,
+    maxHeight: '85%',
+  },
+  fileModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5EA',
+  },
+  fileModalTitle: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: '#000000',
+    flex: 1,
+    marginRight: 12,
+  },
+  fileModalBody: {
+    maxHeight: 500,
+  },
+  fullImageContainer: {
+    backgroundColor: '#000000',
+    minHeight: 300,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullImage: {
+    width: '100%',
+    height: 400,
+  },
+  documentInfoContainer: {
+    padding: 40,
+    alignItems: 'center',
+    gap: 12,
+  },
+  documentName: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: '#000000',
+    textAlign: 'center',
+  },
+  documentCategory: {
+    fontSize: 14,
+    color: '#8E8E93',
+  },
+  fileModalDetails: {
+    padding: 20,
+    gap: 12,
+  },
+  fileModalDetailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F2F2F7',
+  },
+  fileModalDetailLabel: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: '#8E8E93',
+  },
+  fileModalDetailValue: {
+    fontSize: 14,
+    color: '#000000',
+    flex: 1,
+    textAlign: 'right',
+    marginLeft: 12,
+  },
+  fileModalActions: {
+    flexDirection: 'row',
+    padding: 20,
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E5EA',
+  },
+  fileModalButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    height: 50,
+    borderRadius: 12,
+  },
+  openButton: {
+    backgroundColor: '#E5F3FF',
+    borderWidth: 1,
+    borderColor: '#007AFF',
+  },
+  openButtonText: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: '#007AFF',
+  },
+  deleteButton: {
+    backgroundColor: '#FFE5E5',
+    borderWidth: 1,
+    borderColor: '#FF3B30',
+  },
+  deleteButtonText: {
+    fontSize: 16,
     fontWeight: '600' as const,
     color: '#FF3B30',
   },

@@ -356,6 +356,11 @@ export const [HospitalProvider, useHospital] = createContextHook(() => {
     setPatientFiles(prev => [...prev, file]);
   }, []);
 
+  const deletePatientFile = useCallback((id: string) => {
+    console.log('HospitalContext: Deleting patient file:', id);
+    setPatientFiles(prev => prev.filter(f => f.id !== id));
+  }, []);
+
   return useMemo(() => ({
     patients,
     appointments,
@@ -389,5 +394,6 @@ export const [HospitalProvider, useHospital] = createContextHook(() => {
     updateHospitalSettings,
     addPatientVisit,
     addPatientFile,
-  }), [patients, appointments, medications, medicationRegistry, invoices, labOrders, emergencyCases, tasks, notifications, hospitalSettings, patientVisits, patientFiles, addPatient, updatePatient, deletePatient, addAppointment, updateAppointment, deleteAppointment, addMedication, updateMedication, deleteMedication, addMedicationRegistry, updateMedicationRegistry, deleteMedicationRegistry, addInvoice, updateInvoice, deleteInvoice, markNotificationRead, updateTaskStatus, updateHospitalSettings, addPatientVisit, addPatientFile]);
+    deletePatientFile,
+  }), [patients, appointments, medications, medicationRegistry, invoices, labOrders, emergencyCases, tasks, notifications, hospitalSettings, patientVisits, patientFiles, addPatient, updatePatient, deletePatient, addAppointment, updateAppointment, deleteAppointment, addMedication, updateMedication, deleteMedication, addMedicationRegistry, updateMedicationRegistry, deleteMedicationRegistry, addInvoice, updateInvoice, deleteInvoice, markNotificationRead, updateTaskStatus, updateHospitalSettings, addPatientVisit, addPatientFile, deletePatientFile]);
 });
