@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { PatientVisit, PatientFile } from '@/types';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 
 export default function PatientDetailsScreen() {
   const { id } = useLocalSearchParams();

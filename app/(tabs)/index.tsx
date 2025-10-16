@@ -75,7 +75,7 @@ export default function DashboardScreen() {
       />
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         <View style={styles.header}>
-          {hospitalSettings.logo && (
+          {hospitalSettings?.logo && (
             <View style={styles.logoContainer}>
               <Image 
                 source={{ uri: hospitalSettings.logo }} 
