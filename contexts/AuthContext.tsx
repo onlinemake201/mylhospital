@@ -56,56 +56,22 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
   const login = useCallback(async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const demoUsers: Record<string, User> = {
-        'admin@hospital.com': {
-          id: '1',
-          name: 'Admin User',
-          email: 'admin@hospital.com',
-          role: 'superadmin',
-          hospitalId: 'hosp-001',
-          avatar: 'https://i.pravatar.cc/150?img=1',
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          lastLogin: new Date().toISOString(),
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        'doctor@hospital.com': {
-          id: '2',
-          name: 'Dr. Sarah Johnson',
-          email: 'doctor@hospital.com',
-          role: 'doctor',
-          hospitalId: 'hosp-001',
-          departmentId: 'dept-cardiology',
-          avatar: 'https://i.pravatar.cc/150?img=2',
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          lastLogin: new Date().toISOString(),
-        },
-        'nurse@hospital.com': {
-          id: '3',
-          name: 'Maria Schmidt',
-          email: 'nurse@hospital.com',
-          role: 'nurse',
-          hospitalId: 'hosp-001',
-          departmentId: 'dept-cardiology',
-          avatar: 'https://i.pravatar.cc/150?img=3',
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          lastLogin: new Date().toISOString(),
-        },
-      };
+        body: JSON.stringify({ email, password }),
+      });
 
-      const user = demoUsers[email];
-      if (!user) {
-        return { success: false, error: 'Benutzer nicht gefunden' };
+      const data = await response.json();
+
+      if (!data.success) {
+        return { success: false, error: data.error || 'Login fehlgeschlagen' };
       }
 
-      if (!user.isActive) {
-        return { success: false, error: 'Konto ist deaktiviert' };
-      }
-
-      const updatedUser = { ...user, lastLogin: new Date().toISOString() };
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedUser));
-      setUser(updatedUser);
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data.user));
+      setUser(data.user);
       return { success: true };
     } catch (error) {
       console.error('Login failed:', error);
