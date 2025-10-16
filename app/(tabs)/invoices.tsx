@@ -322,6 +322,13 @@ export default function InvoicesScreen() {
     </div>
   </div>
 
+  ${invoice.notes ? `
+  <div style="margin-top: 30px; padding: 20px; background: #F9F9F9; border-radius: 8px; border-left: 4px solid #007AFF;">
+    <h3 style="font-size: 14px; color: #666; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Notizen</h3>
+    <p style="font-size: 15px; color: #000; line-height: 1.6; white-space: pre-wrap;">${invoice.notes}</p>
+  </div>
+  ` : ''}
+
   <div class="footer">
     <p><strong>${hospitalName}</strong></p>
     <p>${hospitalAddress}</p>

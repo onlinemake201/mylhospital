@@ -61,6 +61,8 @@ export default function MedicationsScreen() {
   const [billingData, setBillingData] = useState({
     patientId: '',
     selectedMedications: [] as string[],
+    medicationQuantities: {} as Record<string, number>,
+    notes: '',
   });
 
   const getPatientName = (patientId: string) => {
@@ -204,7 +206,7 @@ export default function MedicationsScreen() {
       const regMed = medicationRegistry.find(rm => rm.name === med?.name && rm.dosage === med?.dosage);
       if (!med || !regMed) return null;
 
-      const quantity = 1;
+      const quantity = billingData.medicationQuantities[medId] || 1;
       const unitPrice = regMed.unitPrice;
       const total = unitPrice * quantity;
 
@@ -236,12 +238,15 @@ export default function MedicationsScreen() {
       total: parseFloat(total.toFixed(2)),
       status: 'draft' as const,
       type: 'medication' as const,
+      notes: billingData.notes || undefined,
     };
 
     addInvoice(invoice);
     setBillingData({
       patientId: '',
       selectedMedications: [],
+      medicationQuantities: {},
+      notes: '',
     });
     Alert.alert('Erfolg', 'Rechnung erstellt und in Rechnungen gespeichert');
   };
@@ -631,7 +636,7 @@ export default function MedicationsScreen() {
                     billingData.patientId === patient.id && styles.patientChipActive,
                   ]}
                   onPress={() => {
-                    setBillingData({ patientId: patient.id, selectedMedications: [] });
+                    setBillingData({ patientId: patient.id, selectedMedications: [], medicationQuantities: {}, notes: '' });
                   }}
                 >
                   <Text
@@ -654,33 +659,85 @@ export default function MedicationsScreen() {
                 patientMedications.map(med => {
                   const regMed = medicationRegistry.find(rm => rm.name === med.name && rm.dosage === med.dosage);
                   return (
-                    <TouchableOpacity
-                      key={med.id}
-                      style={[
-                        styles.medicationItem,
-                        billingData.selectedMedications.includes(med.id) && styles.medicationItemActive,
-                      ]}
-                      onPress={() => {
-                        setBillingData(prev => ({
-                          ...prev,
-                          selectedMedications: prev.selectedMedications.includes(med.id)
-                            ? prev.selectedMedications.filter(id => id !== med.id)
-                            : [...prev.selectedMedications, med.id],
-                        }));
-                      }}
-                    >
-                      <View style={styles.medicationInfo}>
-                        <Text style={styles.medicationName}>{med.name}</Text>
-                        <Text style={styles.medicationDosage}>
-                          {med.dosage} {regMed ? `- €${regMed.unitPrice.toFixed(2)}` : ''}
-                        </Text>
-                      </View>
+                    <View key={med.id}>
+                      <TouchableOpacity
+                        style={[
+                          styles.medicationItem,
+                          billingData.selectedMedications.includes(med.id) && styles.medicationItemActive,
+                        ]}
+                        onPress={() => {
+                          setBillingData(prev => {
+                            const isSelected = prev.selectedMedications.includes(med.id);
+                            const newSelected = isSelected
+                              ? prev.selectedMedications.filter(id => id !== med.id)
+                              : [...prev.selectedMedications, med.id];
+                            
+                            const newQuantities = { ...prev.medicationQuantities };
+                            if (!isSelected) {
+                              newQuantities[med.id] = 1;
+                            } else {
+                              delete newQuantities[med.id];
+                            }
+
+                            return {
+                              ...prev,
+                              selectedMedications: newSelected,
+                              medicationQuantities: newQuantities,
+                            };
+                          });
+                        }}
+                      >
+                        <View style={styles.medicationInfo}>
+                          <Text style={styles.medicationName}>{med.name}</Text>
+                          <Text style={styles.medicationDosage}>
+                            {med.dosage} {regMed ? `- €${regMed.unitPrice.toFixed(2)}` : ''}
+                          </Text>
+                        </View>
+                        {billingData.selectedMedications.includes(med.id) && (
+                          <View style={styles.checkmark}>
+                            <Text style={styles.checkmarkText}>✓</Text>
+                          </View>
+                        )}
+                      </TouchableOpacity>
                       {billingData.selectedMedications.includes(med.id) && (
-                        <View style={styles.checkmark}>
-                          <Text style={styles.checkmarkText}>✓</Text>
+                        <View style={styles.quantitySelector}>
+                          <Text style={styles.quantityLabel}>Menge:</Text>
+                          <View style={styles.quantityControls}>
+                            <TouchableOpacity
+                              style={styles.quantityButton}
+                              onPress={() => {
+                                setBillingData(prev => ({
+                                  ...prev,
+                                  medicationQuantities: {
+                                    ...prev.medicationQuantities,
+                                    [med.id]: Math.max(1, (prev.medicationQuantities[med.id] || 1) - 1),
+                                  },
+                                }));
+                              }}
+                            >
+                              <Text style={styles.quantityButtonText}>-</Text>
+                            </TouchableOpacity>
+                            <Text style={styles.quantityValue}>
+                              {billingData.medicationQuantities[med.id] || 1}
+                            </Text>
+                            <TouchableOpacity
+                              style={styles.quantityButton}
+                              onPress={() => {
+                                setBillingData(prev => ({
+                                  ...prev,
+                                  medicationQuantities: {
+                                    ...prev.medicationQuantities,
+                                    [med.id]: (prev.medicationQuantities[med.id] || 1) + 1,
+                                  },
+                                }));
+                              }}
+                            >
+                              <Text style={styles.quantityButtonText}>+</Text>
+                            </TouchableOpacity>
+                          </View>
                         </View>
                       )}
-                    </TouchableOpacity>
+                    </View>
                   );
                 })
               ) : (
@@ -693,6 +750,17 @@ export default function MedicationsScreen() {
 
           {billingData.selectedMedications.length > 0 && (
             <View style={styles.billingInfo}>
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Notizen (optional)</Text>
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  value={billingData.notes}
+                  onChangeText={(text) => setBillingData(prev => ({ ...prev, notes: text }))}
+                  placeholder="Zusätzliche Notizen zur Rechnung..."
+                  multiline
+                  numberOfLines={3}
+                />
+              </View>
               <View style={styles.billingRow}>
                 <Text style={styles.billingLabel}>Ausgewählte Medikamente:</Text>
                 <Text style={styles.billingValue}>{billingData.selectedMedications.length}</Text>
@@ -703,7 +771,8 @@ export default function MedicationsScreen() {
                   €{billingData.selectedMedications.reduce((sum, medId) => {
                     const med = medications.find(m => m.id === medId);
                     const regMed = medicationRegistry.find(rm => rm.name === med?.name && rm.dosage === med?.dosage);
-                    return sum + (regMed?.unitPrice || 0);
+                    const quantity = billingData.medicationQuantities[medId] || 1;
+                    return sum + ((regMed?.unitPrice || 0) * quantity);
                   }, 0).toFixed(2)}
                 </Text>
               </View>
@@ -1294,6 +1363,46 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '600' as const,
     color: '#FFFFFF',
+  },
+  quantitySelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#E5F3FF',
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+  },
+  quantityLabel: {
+    fontSize: 14,
+    fontWeight: '600' as const,
+    color: '#007AFF',
+  },
+  quantityControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  quantityButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#007AFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  quantityButtonText: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: '#FFFFFF',
+  },
+  quantityValue: {
+    fontSize: 16,
+    fontWeight: '700' as const,
+    color: '#007AFF',
+    minWidth: 30,
+    textAlign: 'center',
   },
   routeButtons: {
     flexDirection: 'row',

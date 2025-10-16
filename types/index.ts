@@ -182,6 +182,7 @@ export interface Invoice {
   status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
   paymentMethod?: string;
   type?: 'medication' | 'service' | 'consultation';
+  notes?: string;
 }
 
 export interface InvoiceItem {
