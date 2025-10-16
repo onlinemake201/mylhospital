@@ -40,7 +40,7 @@ export default function LoginScreen() {
   };
 
   const demoAccounts = [
-    { email: 'admin@hospital.com', password: 'admin123', role: 'Superadmin' },
+    { email: 'admin@hospital.com', password: 'Admin123', role: 'Superadmin' },
     { email: 'doctor@hospital.com', password: 'doctor123', role: 'Arzt' },
     { email: 'nurse@hospital.com', password: 'nurse123', role: 'Pflege' },
   ];
