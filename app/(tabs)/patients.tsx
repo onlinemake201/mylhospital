@@ -133,25 +133,26 @@ export default function PatientsScreen() {
           </Text>
           {filteredPatients.map(patient => (
             <View key={patient.id} style={styles.patientCardContainer}>
-              <TouchableOpacity
-                onPress={() => {
-                  if (selectedPatient?.id === patient.id) {
-                    setSelectedPatient(null);
-                  } else {
-                    setSelectedPatient(patient);
-                  }
-                }}
-                onLongPress={() => router.push(`/patient-details/${patient.id}`)}
+              <View
                 style={[
                   styles.patientCardWrapper,
                   selectedPatient?.id === patient.id && styles.patientCardSelected
                 ]}
               >
-                <PatientCard 
-                  patient={patient} 
-                  onPress={() => router.push(`/patient-details/${patient.id}`)}
-                />
-              </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    if (selectedPatient?.id === patient.id) {
+                      setSelectedPatient(null);
+                    } else {
+                      setSelectedPatient(patient);
+                    }
+                  }}
+                  onLongPress={() => router.push(`/patient-details/${patient.id}`)}
+                  activeOpacity={0.7}
+                >
+                  <PatientCard patient={patient} />
+                </TouchableOpacity>
+              </View>
             </View>
           ))}
         </ScrollView>

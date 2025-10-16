@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { User, Calendar, AlertCircle } from 'lucide-react-native';
 import { Card } from './ui/Card';
 import { Badge } from './ui/Badge';
@@ -7,10 +7,9 @@ import { Patient } from '@/types';
 
 interface PatientCardProps {
   patient: Patient;
-  onPress?: () => void;
 }
 
-export function PatientCard({ patient, onPress }: PatientCardProps) {
+export function PatientCard({ patient }: PatientCardProps) {
   const getStatusVariant = (status: Patient['status']) => {
     switch (status) {
       case 'admitted':
@@ -27,7 +26,6 @@ export function PatientCard({ patient, onPress }: PatientCardProps) {
   };
 
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
       <Card style={styles.card}>
         <View style={styles.header}>
           <View style={styles.patientInfo}>
@@ -67,7 +65,6 @@ export function PatientCard({ patient, onPress }: PatientCardProps) {
           </View>
         )}
       </Card>
-    </TouchableOpacity>
   );
 }
 
