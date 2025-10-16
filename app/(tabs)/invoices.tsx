@@ -287,6 +287,7 @@ export default function InvoicesScreen() {
       <tr>
         <th>Beschreibung</th>
         <th>Code</th>
+        <th style="text-align: center;">Häufigkeit</th>
         <th style="text-align: center;">Menge</th>
         <th style="text-align: right;">Einzelpreis</th>
         <th style="text-align: right;">Gesamt</th>
@@ -297,6 +298,7 @@ export default function InvoicesScreen() {
         <tr>
           <td>${item.description}</td>
           <td>${item.code || '-'}</td>
+          <td style="text-align: center;">${item.frequency || '-'}</td>
           <td style="text-align: center;">${item.quantity}</td>
           <td style="text-align: right;">€${item.unitPrice.toFixed(2)}</td>
           <td style="text-align: right;">€${item.total.toFixed(2)}</td>

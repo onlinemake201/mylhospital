@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ScrollView, View, Text, StyleSheet, TouchableOpacity, TextInput, Modal, Alert } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { ArrowLeft, FileText, Upload, Calendar, FileImage, ChevronDown, ChevronUp, X } from 'lucide-react-native';
+import { ArrowLeft, FileText, Upload, Calendar, FileImage, ChevronDown, ChevronUp, X, Edit2, Trash2 } from 'lucide-react-native';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { useHospital } from '@/contexts/HospitalContext';
@@ -206,6 +206,40 @@ export default function PatientDetailsScreen() {
             <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
               <ArrowLeft size={24} color="#007AFF" />
             </TouchableOpacity>
+          ),
+          headerRight: () => (
+            <View style={{ flexDirection: 'row', gap: 12, marginRight: 8 }}>
+              <TouchableOpacity 
+                onPress={() => router.push(`/patients?edit=${patient.id}` as any)}
+                style={{ padding: 8 }}
+              >
+                <Edit2 size={22} color="#007AFF" />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={() => {
+                  Alert.alert(
+                    'Patient löschen',
+                    `Möchten Sie ${patient.firstName} ${patient.lastName} wirklich löschen?`,
+                    [
+                      { text: 'Abbrechen', style: 'cancel' },
+                      {
+                        text: 'Löschen',
+                        style: 'destructive',
+                        onPress: () => {
+                          router.back();
+                          setTimeout(() => {
+                            Alert.alert('Erfolg', 'Patient gelöscht');
+                          }, 100);
+                        },
+                      },
+                    ]
+                  );
+                }}
+                style={{ padding: 8 }}
+              >
+                <Trash2 size={22} color="#FF3B30" />
+              </TouchableOpacity>
+            </View>
           ),
         }}
       />

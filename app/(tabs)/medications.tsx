@@ -216,6 +216,7 @@ export default function MedicationsScreen() {
         unitPrice,
         total,
         medicationId: medId,
+        frequency: med.frequency,
       };
     }).filter(Boolean) as any[];
 

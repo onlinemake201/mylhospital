@@ -73,13 +73,12 @@ export function PatientCard({ patient, onPress }: PatientCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    marginBottom: 12,
+    padding: 12,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
+    alignItems: 'center',
   },
   patientInfo: {
     flexDirection: 'row',
@@ -87,56 +86,57 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: '#E5F3FF',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 10,
   },
   nameContainer: {
     flex: 1,
   },
   name: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '600' as const,
     color: '#000000',
     marginBottom: 2,
   },
   mrn: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#8E8E93',
   },
   details: {
     flexDirection: 'row',
-    gap: 16,
-    marginBottom: 8,
+    gap: 12,
+    marginTop: 8,
   },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
   },
   detailText: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#3C3C43',
   },
   bloodType: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600' as const,
     color: '#007AFF',
   },
   allergies: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
     backgroundColor: '#FFE5E5',
-    padding: 8,
-    borderRadius: 8,
+    padding: 6,
+    borderRadius: 6,
+    marginTop: 8,
   },
   allergyText: {
-    fontSize: 13,
+    fontSize: 11,
     color: '#FF3B30',
     fontWeight: '500' as const,
   },

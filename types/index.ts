@@ -192,6 +192,7 @@ export interface InvoiceItem {
   unitPrice: number;
   total: number;
   medicationId?: string;
+  frequency?: string;
 }
 
 export interface Task {
