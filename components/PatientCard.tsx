@@ -53,33 +53,47 @@ export function PatientCard({ patient, compact = false }: PatientCardProps) {
   if (compact) {
     return (
       <View style={styles.compactCard}>
-        <View style={styles.compactHeader}>
+        <View style={styles.compactTop}>
           <View style={styles.compactAvatar}>
             <Text style={styles.compactAvatarText}>
               {patient.firstName[0]}{patient.lastName[0]}
             </Text>
           </View>
-          <View style={styles.compactInfo}>
-            <Text style={styles.compactName} numberOfLines={1}>
-              {patient.firstName} {patient.lastName}
-            </Text>
-            <View style={styles.compactDetails}>
-              <Text style={styles.compactMrn}>{patient.mrn}</Text>
-              <Text style={styles.compactSeparator}>•</Text>
-              <Text style={styles.compactAge}>{calculateAge(patient.dateOfBirth)}y</Text>
-              {patient.bloodType && (
-                <>
-                  <Text style={styles.compactSeparator}>•</Text>
-                  <Text style={styles.compactBloodType}>{patient.bloodType}</Text>
-                </>
-              )}
-            </View>
+          <View style={[styles.compactStatusBadge, { backgroundColor: getStatusColor(patient.status) }]}>
+            <Text style={styles.compactStatusText}>{getStatusLabel(patient.status)}</Text>
           </View>
-          <View style={[styles.compactStatusDot, { backgroundColor: getStatusColor(patient.status) }]} />
         </View>
+        
+        <Text style={styles.compactName} numberOfLines={2}>
+          {patient.firstName} {patient.lastName}
+        </Text>
+        
+        <View style={styles.compactDetailsRow}>
+          <Text style={styles.compactMrn} numberOfLines={1}>{patient.mrn}</Text>
+        </View>
+        
+        <View style={styles.compactMetrics}>
+          <View style={styles.compactMetricItem}>
+            <Text style={styles.compactMetricLabel}>Age</Text>
+            <Text style={styles.compactMetricValue}>{calculateAge(patient.dateOfBirth)}</Text>
+          </View>
+          {patient.bloodType && (
+            <View style={styles.compactMetricItem}>
+              <Text style={styles.compactMetricLabel}>Blood</Text>
+              <Text style={styles.compactMetricValue}>{patient.bloodType}</Text>
+            </View>
+          )}
+          {!patient.bloodType && (
+            <View style={styles.compactMetricItem}>
+              <Text style={styles.compactMetricLabel}>Gender</Text>
+              <Text style={styles.compactMetricValue}>{patient.gender[0].toUpperCase()}</Text>
+            </View>
+          )}
+        </View>
+        
         {patient.allergies.length > 0 && (
           <View style={styles.compactAllergies}>
-            <AlertCircle size={12} color="#FF3B30" />
+            <AlertCircle size={10} color="#FF3B30" />
             <Text style={styles.compactAllergyText} numberOfLines={1}>
               {patient.allergies.join(', ')}
             </Text>
@@ -137,63 +151,79 @@ export function PatientCard({ patient, compact = false }: PatientCardProps) {
 const styles = StyleSheet.create({
   compactCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 12,
+    borderRadius: 16,
+    padding: 14,
   },
-  compactHeader: {
+  compactTop: {
     flexDirection: 'row',
-    alignItems: 'center',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 10,
   },
   compactAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     backgroundColor: '#007AFF',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
   },
   compactAvatarText: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '700' as const,
     color: '#FFFFFF',
   },
-  compactInfo: {
-    flex: 1,
+  compactStatusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  compactStatusText: {
+    fontSize: 9,
+    fontWeight: '700' as const,
+    color: '#FFFFFF',
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.5,
   },
   compactName: {
-    fontSize: 16,
-    fontWeight: '600' as const,
+    fontSize: 15,
+    fontWeight: '700' as const,
     color: '#000000',
-    marginBottom: 2,
+    marginBottom: 4,
+    lineHeight: 18,
   },
-  compactDetails: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+  compactDetailsRow: {
+    marginBottom: 10,
   },
   compactMrn: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#8E8E93',
+    fontWeight: '500' as const,
   },
-  compactAge: {
-    fontSize: 12,
-    color: '#3C3C43',
+  compactMetrics: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 8,
   },
-  compactBloodType: {
-    fontSize: 12,
+  compactMetricItem: {
+    flex: 1,
+    backgroundColor: '#F2F2F7',
+    borderRadius: 8,
+    padding: 8,
+    alignItems: 'center',
+  },
+  compactMetricLabel: {
+    fontSize: 9,
+    color: '#8E8E93',
     fontWeight: '600' as const,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  compactMetricValue: {
+    fontSize: 14,
+    fontWeight: '700' as const,
     color: '#007AFF',
-  },
-  compactSeparator: {
-    fontSize: 12,
-    color: '#8E8E93',
-  },
-  compactStatusDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginLeft: 8,
   },
   compactAllergies: {
     flexDirection: 'row',
@@ -202,12 +232,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFE5E5',
     padding: 6,
     borderRadius: 6,
-    marginTop: 8,
+    marginTop: 4,
   },
   compactAllergyText: {
-    fontSize: 11,
+    fontSize: 9,
     color: '#FF3B30',
-    fontWeight: '500' as const,
+    fontWeight: '600' as const,
     flex: 1,
   },
   card: {

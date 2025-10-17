@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ScrollView, View, Text, StyleSheet, TextInput, TouchableOpacity, Modal, Alert, SectionList } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, TextInput, TouchableOpacity, Modal, Alert, FlatList } from 'react-native';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { Search, Plus, X, Edit2, Trash2, ArrowUpDown } from 'lucide-react-native';
 import { PatientCard } from '@/components/PatientCard';
@@ -56,24 +56,7 @@ export default function PatientsScreen() {
     return filtered;
   }, [patients, searchQuery, filterStatus, sortBy]);
 
-  const groupedPatients = useMemo(() => {
-    const groups: { [key: string]: Patient[] } = {};
-    
-    filteredAndSortedPatients.forEach(patient => {
-      const firstLetter = patient.lastName[0].toUpperCase();
-      if (!groups[firstLetter]) {
-        groups[firstLetter] = [];
-      }
-      groups[firstLetter].push(patient);
-    });
 
-    return Object.keys(groups)
-      .sort()
-      .map(letter => ({
-        title: letter,
-        data: groups[letter],
-      }));
-  }, [filteredAndSortedPatients]);
 
   useEffect(() => {
     if (edit) {
@@ -200,45 +183,38 @@ export default function PatientsScreen() {
           ))}
         </ScrollView>
 
-        <Text style={styles.resultCount}>
-          {filteredAndSortedPatients.length} {filteredAndSortedPatients.length === 1 ? 'patient' : 'patients'}
-        </Text>
+        <View style={styles.resultHeader}>
+          <Text style={styles.resultCount}>
+            {filteredAndSortedPatients.length} {filteredAndSortedPatients.length === 1 ? 'patient' : 'patients'}
+          </Text>
+        </View>
 
-        <SectionList
-          sections={groupedPatients}
+        <FlatList
+          data={filteredAndSortedPatients}
           keyExtractor={(item) => item.id}
           style={styles.list}
           contentContainerStyle={styles.listContent}
-          stickySectionHeadersEnabled
-          renderSectionHeader={({ section }) => (
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionHeaderText}>{section.title}</Text>
-              <View style={styles.sectionHeaderLine} />
-            </View>
-          )}
+          numColumns={2}
+          columnWrapperStyle={styles.columnWrapper}
+          key="two-column"
           renderItem={({ item: patient }) => (
-            <View style={styles.patientCardContainer}>
-              <View
-                style={[
-                  styles.patientCardWrapper,
-                  selectedPatient?.id === patient.id && styles.patientCardSelected
-                ]}
-              >
-                <TouchableOpacity
-                  onPress={() => {
-                    if (selectedPatient?.id === patient.id) {
-                      setSelectedPatient(null);
-                    } else {
-                      setSelectedPatient(patient);
-                    }
-                  }}
-                  onLongPress={() => router.push(`/patient-details/${patient.id}`)}
-                  activeOpacity={0.7}
-                >
-                  <PatientCard patient={patient} compact />
-                </TouchableOpacity>
-              </View>
-            </View>
+            <TouchableOpacity
+              style={[
+                styles.gridCard,
+                selectedPatient?.id === patient.id && styles.gridCardSelected
+              ]}
+              onPress={() => {
+                if (selectedPatient?.id === patient.id) {
+                  setSelectedPatient(null);
+                } else {
+                  setSelectedPatient(patient);
+                }
+              }}
+              onLongPress={() => router.push(`/patient-details/${patient.id}`)}
+              activeOpacity={0.7}
+            >
+              <PatientCard patient={patient} compact />
+            </TouchableOpacity>
           )}
         />
 
@@ -609,16 +585,42 @@ const styles = StyleSheet.create({
     backgroundColor: '#F2F2F7',
   },
   listContent: {
-    padding: 16,
+    padding: 12,
     paddingBottom: 100,
   },
-  resultCount: {
-    fontSize: 14,
-    color: '#8E8E93',
+  resultHeader: {
+    backgroundColor: '#F2F2F7',
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 12,
-    backgroundColor: '#F2F2F7',
+    paddingBottom: 8,
+  },
+  resultCount: {
+    fontSize: 15,
+    fontWeight: '600' as const,
+    color: '#3C3C43',
+  },
+  columnWrapper: {
+    gap: 8,
+    paddingHorizontal: 4,
+  },
+  gridCard: {
+    flex: 1,
+    marginBottom: 8,
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  gridCardSelected: {
+    borderWidth: 2.5,
+    borderColor: '#007AFF',
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
   },
   sortContainer: {
     flexDirection: 'row',
@@ -655,24 +657,7 @@ const styles = StyleSheet.create({
   sortButtonTextActive: {
     color: '#FFFFFF',
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#F2F2F7',
-  },
-  sectionHeaderText: {
-    fontSize: 18,
-    fontWeight: '700' as const,
-    color: '#007AFF',
-    marginRight: 12,
-  },
-  sectionHeaderLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#E5E5EA',
-  },
+
   addButton: {
     marginRight: 8,
   },
@@ -863,17 +848,7 @@ const styles = StyleSheet.create({
     fontWeight: '600' as const,
     color: '#000000',
   },
-  patientCardContainer: {
-    marginBottom: 8,
-  },
-  patientCardWrapper: {
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  patientCardSelected: {
-    borderWidth: 2,
-    borderColor: '#007AFF',
-  },
+
   statusButtons: {
     flexDirection: 'row',
     flexWrap: 'wrap',
