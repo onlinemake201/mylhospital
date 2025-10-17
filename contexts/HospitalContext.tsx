@@ -179,13 +179,13 @@ export const [HospitalProvider, useHospital] = createContextHook(() => {
 
   const [hospitalSettings, setHospitalSettings] = useState<HospitalSettings>({
     id: 'hosp-001',
-    name: 'Klinikum Musterstadt',
-    address: 'Musterstraße 123, 12345 Musterstadt',
-    phone: '+49 123 456789',
-    email: 'info@klinikum-musterstadt.de',
-    website: 'www.klinikum-musterstadt.de',
-    taxId: 'DE123456789',
-    language: 'de',
+    name: 'General Hospital',
+    address: '123 Medical Center Drive, Springfield, 12345',
+    phone: '+1 555 123 4567',
+    email: 'info@generalhospital.com',
+    website: 'www.generalhospital.com',
+    taxId: 'TAX-123456789',
+    language: 'en',
   });
 
   const [patientVisits, setPatientVisits] = useState<PatientVisit[]>([
@@ -196,11 +196,11 @@ export const [HospitalProvider, useHospital] = createContextHook(() => {
       time: '10:30',
       doctorId: 'd1',
       doctorName: 'Dr. Sarah Johnson',
-      chiefComplaint: 'Chronische Rückenschmerzen',
-      diagnosis: 'Lumbale Spondylose',
-      treatment: 'Physiotherapie empfohlen, Schmerzmedikation',
-      prescriptions: ['Ibuprofen 400mg', 'Physiotherapie 10x'],
-      notes: 'Patient zeigt gute Compliance, Termin in 4 Wochen',
+      chiefComplaint: 'Chronic back pain',
+      diagnosis: 'Lumbar spondylosis',
+      treatment: 'Physical therapy recommended, pain medication',
+      prescriptions: ['Ibuprofen 400mg', 'Physical therapy 10x'],
+      notes: 'Patient shows good compliance, appointment in 4 weeks',
       category: 'consultation',
     },
   ]);

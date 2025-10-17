@@ -3,7 +3,7 @@ import { useMemo, useState, useCallback } from 'react';
 import { translations, Language } from '@/constants/translations';
 
 export const [LanguageProvider, useLanguage] = createContextHook(() => {
-  const [language, setLanguageState] = useState<Language>('de');
+  const [language, setLanguageState] = useState<Language>('en');
 
   const t = useMemo(() => translations[language], [language]);
 

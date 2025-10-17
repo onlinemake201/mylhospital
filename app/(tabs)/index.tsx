@@ -56,8 +56,8 @@ export default function DashboardScreen() {
   }, [appointments]);
 
   const monthNames = [
-    'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
-    'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
   return (
@@ -100,8 +100,8 @@ export default function DashboardScreen() {
           {upcomingAppointments.length === 0 ? (
             <Card style={styles.emptyCard}>
               <Calendar size={48} color="#C7C7CC" />
-              <Text style={styles.emptyText}>Keine bevorstehenden Termine</Text>
-              <Text style={styles.emptySubtext}>Alle Termine sind abgeschlossen</Text>
+              <Text style={styles.emptyText}>No upcoming appointments</Text>
+              <Text style={styles.emptySubtext}>All appointments completed</Text>
             </Card>
           ) : (
             upcomingAppointments.map(appointment => {
@@ -122,7 +122,7 @@ export default function DashboardScreen() {
                       </Text>
                       {isToday && (
                         <View style={styles.todayBadge}>
-                          <Text style={styles.todayBadgeText}>Heute</Text>
+                          <Text style={styles.todayBadgeText}>Today</Text>
                         </View>
                       )}
                     </View>
@@ -142,7 +142,7 @@ export default function DashboardScreen() {
                       )}
                     </View>
                     <Badge
-                      label={appointment.status === 'confirmed' ? 'Bestätigt' : 'Geplant'}
+                      label={appointment.status === 'confirmed' ? 'Confirmed' : 'Scheduled'}
                       variant={appointment.status === 'confirmed' ? 'success' : 'info'}
                     />
                   </View>

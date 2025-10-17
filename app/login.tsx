@@ -24,7 +24,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Fehler', 'Bitte E-Mail und Passwort eingeben');
+      Alert.alert('Error', 'Please enter email and password');
       return;
     }
 
@@ -35,14 +35,14 @@ export default function LoginScreen() {
     if (result.success) {
       router.replace('/(tabs)');
     } else {
-      Alert.alert('Login fehlgeschlagen', result.error || 'Ungültige Anmeldedaten');
+      Alert.alert('Login failed', result.error || 'Invalid credentials');
     }
   };
 
   const demoAccounts = [
     { email: 'admin@hospital.com', password: 'admin123', role: 'Superadmin' },
-    { email: 'doctor@hospital.com', password: 'doctor123', role: 'Arzt' },
-    { email: 'nurse@hospital.com', password: 'nurse123', role: 'Pflege' },
+    { email: 'doctor@hospital.com', password: 'doctor123', role: 'Doctor' },
+    { email: 'nurse@hospital.com', password: 'nurse123', role: 'Nurse' },
   ];
 
   return (
@@ -57,7 +57,7 @@ export default function LoginScreen() {
         <View style={styles.content}>
           <View style={styles.header}>
             <Text style={styles.title}>Hospital Management</Text>
-            <Text style={styles.subtitle}>Willkommen zurück</Text>
+            <Text style={styles.subtitle}>Welcome Back</Text>
           </View>
 
           <View style={styles.form}>
@@ -65,7 +65,7 @@ export default function LoginScreen() {
               <Mail size={20} color="#8E8E93" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="E-Mail"
+                placeholder="Email"
                 placeholderTextColor="#8E8E93"
                 value={email}
                 onChangeText={setEmail}
@@ -79,7 +79,7 @@ export default function LoginScreen() {
               <Lock size={20} color="#8E8E93" style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Passwort"
+                placeholder="Password"
                 placeholderTextColor="#8E8E93"
                 value={password}
                 onChangeText={setPassword}
@@ -96,13 +96,13 @@ export default function LoginScreen() {
               {isLoading ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
-                <Text style={styles.loginButtonText}>Anmelden</Text>
+                <Text style={styles.loginButtonText}>Login</Text>
               )}
             </TouchableOpacity>
           </View>
 
           <View style={styles.demoSection}>
-            <Text style={styles.demoTitle}>Demo-Konten:</Text>
+            <Text style={styles.demoTitle}>Demo Accounts:</Text>
             {demoAccounts.map((account, index) => (
               <TouchableOpacity
                 key={index}

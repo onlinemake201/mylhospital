@@ -96,11 +96,11 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
 
       const user = demoUsers[email];
       if (!user) {
-        return { success: false, error: 'Benutzer nicht gefunden' };
+        return { success: false, error: 'User not found' };
       }
 
       if (!user.isActive) {
-        return { success: false, error: 'Konto ist deaktiviert' };
+        return { success: false, error: 'Account is disabled' };
       }
 
       const updatedUser = { ...user, lastLogin: new Date().toISOString() };
@@ -109,7 +109,7 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
       return { success: true };
     } catch (error) {
       console.error('Login failed:', error);
-      return { success: false, error: 'Login fehlgeschlagen' };
+      return { success: false, error: 'Login failed' };
     } finally {
       setIsLoading(false);
     }
@@ -124,7 +124,7 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
       return { success: true };
     } catch (error) {
       console.error('AuthContext: Logout failed:', error);
-      return { success: false, error: 'Logout fehlgeschlagen' };
+      return { success: false, error: 'Logout failed' };
     }
   }, []);
 

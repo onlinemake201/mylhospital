@@ -130,7 +130,7 @@ export const [UserManagementProvider, useUserManagement] = createContextHook(() 
 
   const resetPassword = useCallback(async (userId: string, newPassword: string) => {
     console.log(`Password reset for user ${userId}: ${newPassword}`);
-    return { success: true, message: 'Passwort erfolgreich zurückgesetzt' };
+    return { success: true, message: 'Password successfully reset' };
   }, []);
 
   const getUsersByRole = useCallback((role: UserRole) => {

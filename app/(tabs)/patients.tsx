@@ -188,23 +188,23 @@ export default function PatientsScreen() {
                 }}
               >
                 <Edit2 size={18} color="#007AFF" />
-                <Text style={styles.editPatientText}>Bearbeiten</Text>
+                <Text style={styles.editPatientText}>Edit</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.deletePatientButton}
                 onPress={() => {
                   Alert.alert(
-                    'Patient löschen',
-                    `Möchten Sie ${selectedPatient.firstName} ${selectedPatient.lastName} wirklich löschen?`,
+                    'Delete Patient',
+                    `Do you really want to delete ${selectedPatient.firstName} ${selectedPatient.lastName}?`,
                     [
-                      { text: 'Abbrechen', style: 'cancel' },
+                      { text: 'Cancel', style: 'cancel' },
                       {
-                        text: 'Löschen',
+                        text: 'Delete',
                         style: 'destructive',
                         onPress: () => {
                           deletePatient(selectedPatient.id);
                           setSelectedPatient(null);
-                          Alert.alert('Erfolg', 'Patient gelöscht');
+                          Alert.alert('Success', 'Patient deleted');
                         },
                       },
                     ]
@@ -212,7 +212,7 @@ export default function PatientsScreen() {
                 }}
               >
                 <Trash2 size={18} color="#FF3B30" />
-                <Text style={styles.deletePatientText}>Löschen</Text>
+                <Text style={styles.deletePatientText}>Delete</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -225,7 +225,7 @@ export default function PatientsScreen() {
               onPress={() => setShowCreateModal(true)}
             >
               <Plus size={24} color="#FFFFFF" />
-              <Text style={styles.floatingButtonText}>Neuen Patient erfassen</Text>
+              <Text style={styles.floatingButtonText}>New Patient</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -239,7 +239,7 @@ export default function PatientsScreen() {
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>{editingPatient ? 'Patient bearbeiten' : 'Neuer Patient'}</Text>
+                <Text style={styles.modalTitle}>{editingPatient ? 'Edit Patient' : 'New Patient'}</Text>
                 <TouchableOpacity onPress={() => {
                   setShowCreateModal(false);
                   setEditingPatient(null);
@@ -250,27 +250,27 @@ export default function PatientsScreen() {
 
               <ScrollView style={styles.modalScroll}>
                 <View style={styles.formGroup}>
-                  <Text style={styles.label}>Vorname *</Text>
+                  <Text style={styles.label}>First Name *</Text>
                   <TextInput
                     style={styles.input}
                     value={newPatient.firstName}
                     onChangeText={(text) => setNewPatient({ ...newPatient, firstName: text })}
-                    placeholder="Vorname eingeben"
+                    placeholder="Enter first name"
                   />
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.label}>Nachname *</Text>
+                  <Text style={styles.label}>Last Name *</Text>
                   <TextInput
                     style={styles.input}
                     value={newPatient.lastName}
                     onChangeText={(text) => setNewPatient({ ...newPatient, lastName: text })}
-                    placeholder="Nachname eingeben"
+                    placeholder="Enter last name"
                   />
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.label}>Geburtsdatum * (YYYY-MM-DD)</Text>
+                  <Text style={styles.label}>Date of Birth * (YYYY-MM-DD)</Text>
                   <TextInput
                     style={styles.input}
                     value={newPatient.dateOfBirth}
@@ -280,7 +280,7 @@ export default function PatientsScreen() {
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.label}>Geschlecht</Text>
+                  <Text style={styles.label}>Gender</Text>
                   <View style={styles.genderButtons}>
                     {(['male', 'female', 'other'] as const).map((gender) => (
                       <TouchableOpacity
@@ -297,7 +297,7 @@ export default function PatientsScreen() {
                             newPatient.gender === gender && styles.genderButtonTextActive,
                           ]}
                         >
-                          {gender === 'male' ? 'Männlich' : gender === 'female' ? 'Weiblich' : 'Divers'}
+                          {gender === 'male' ? 'Male' : gender === 'female' ? 'Female' : 'Other'}
                         </Text>
                       </TouchableOpacity>
                     ))}
@@ -305,7 +305,7 @@ export default function PatientsScreen() {
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.label}>Blutgruppe</Text>
+                  <Text style={styles.label}>Blood Type</Text>
                   <TextInput
                     style={styles.input}
                     value={newPatient.bloodType}
@@ -315,34 +315,34 @@ export default function PatientsScreen() {
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.label}>Gewicht (KG)</Text>
+                  <Text style={styles.label}>Weight (KG)</Text>
                   <TextInput
                     style={styles.input}
                     value={newPatient.weight}
                     onChangeText={(text) => setNewPatient({ ...newPatient, weight: text })}
-                    placeholder="z.B. 75"
+                    placeholder="e.g. 75"
                     keyboardType="decimal-pad"
                   />
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.label}>Telefonnummer *</Text>
+                  <Text style={styles.label}>Phone Number *</Text>
                   <TextInput
                     style={styles.input}
                     value={newPatient.contactNumber}
                     onChangeText={(text) => setNewPatient({ ...newPatient, contactNumber: text })}
-                    placeholder="+49 123 456789"
+                    placeholder="+1 555 123 4567"
                     keyboardType="phone-pad"
                   />
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.label}>Allergien (kommagetrennt)</Text>
+                  <Text style={styles.label}>Allergies (comma separated)</Text>
                   <TextInput
                     style={styles.input}
                     value={newPatient.allergies}
                     onChangeText={(text) => setNewPatient({ ...newPatient, allergies: text })}
-                    placeholder="Penicillin, Nüsse, etc."
+                    placeholder="Penicillin, Nuts, etc."
                     multiline
                   />
                 </View>
@@ -365,7 +365,7 @@ export default function PatientsScreen() {
                             newPatient.status === status && styles.statusButtonTextActive,
                           ]}
                         >
-                          {status === 'admitted' ? 'Stationär' : status === 'outpatient' ? 'Ambulant' : status === 'emergency' ? 'Notfall' : 'Entlassen'}
+                          {status === 'admitted' ? 'Admitted' : status === 'outpatient' ? 'Outpatient' : status === 'emergency' ? 'Emergency' : 'Discharged'}
                         </Text>
                       </TouchableOpacity>
                     ))}
@@ -381,7 +381,7 @@ export default function PatientsScreen() {
                     setEditingPatient(null);
                   }}
                 >
-                  <Text style={styles.cancelButtonText}>Abbrechen</Text>
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.modalButton, styles.confirmButton]}
@@ -389,7 +389,7 @@ export default function PatientsScreen() {
                     console.log('Form submitted with data:', newPatient);
                     
                     if (!newPatient.firstName || !newPatient.lastName || !newPatient.dateOfBirth || !newPatient.contactNumber) {
-                      Alert.alert('Fehler', 'Bitte alle Pflichtfelder ausfüllen');
+                      Alert.alert('Error', 'Please fill in all required fields');
                       return;
                     }
                     
@@ -408,7 +408,7 @@ export default function PatientsScreen() {
                           status: newPatient.status,
                           admissionDate: newPatient.status === 'admitted' && !editingPatient.admissionDate ? new Date().toISOString().split('T')[0] : editingPatient.admissionDate,
                         });
-                        Alert.alert('Erfolg', 'Patient erfolgreich aktualisiert');
+                        Alert.alert('Success', 'Patient updated successfully');
                       } else {
                         const patient: Patient = {
                           id: `p${Date.now()}`,
@@ -426,7 +426,7 @@ export default function PatientsScreen() {
                         };
                         console.log('Creating new patient:', patient);
                         addPatient(patient);
-                        Alert.alert('Erfolg', 'Patient erfolgreich erstellt');
+                        Alert.alert('Success', 'Patient created successfully');
                       }
                       
                       setShowCreateModal(false);
@@ -444,11 +444,11 @@ export default function PatientsScreen() {
                       });
                     } catch (error) {
                       console.error('Error saving patient:', error);
-                      Alert.alert('Fehler', 'Patient konnte nicht gespeichert werden');
+                      Alert.alert('Error', 'Could not save patient');
                     }
                   }}
                 >
-                  <Text style={styles.confirmButtonText}>{editingPatient ? 'Aktualisieren' : 'Erstellen'}</Text>
+                  <Text style={styles.confirmButtonText}>{editingPatient ? 'Update' : 'Create'}</Text>
                 </TouchableOpacity>
               </View>
             </View>
