@@ -10,16 +10,16 @@ import { Medication, MedicationRegistry } from '@/types';
 type TabType = 'registry' | 'assignment' | 'billing';
 
 const frequencyOptions = [
-  '1x pro Tag',
-  '2x pro Tag',
-  '3x pro Tag',
-  '4x pro Tag',
-  'Alle 4 Stunden',
-  'Alle 6 Stunden',
-  'Alle 8 Stunden',
-  'Alle 12 Stunden',
-  'Bei Bedarf',
-  'Andere',
+  '1x per day',
+  '2x per day',
+  '3x per day',
+  '4x per day',
+  'Every 4 hours',
+  'Every 6 hours',
+  'Every 8 hours',
+  'Every 12 hours',
+  'As needed',
+  'Other',
 ];
 
 export default function MedicationsScreen() {
@@ -93,7 +93,7 @@ export default function MedicationsScreen() {
 
   const handleRegisterMedication = () => {
     if (!newMedication.name || !newMedication.dosage || !newMedication.unitPrice || !newMedication.stockQuantity) {
-      Alert.alert('Fehler', 'Bitte alle Pflichtfelder ausfüllen');
+      Alert.alert('Error', 'Please fill all required fields');
       return;
     }
 
@@ -102,7 +102,7 @@ export default function MedicationsScreen() {
     const reorderLevel = parseInt(newMedication.reorderLevel) || 100;
 
     if (isNaN(unitPrice) || isNaN(stockQuantity)) {
-      Alert.alert('Fehler', 'Preis und Menge müssen Zahlen sein');
+      Alert.alert('Error', 'Price and quantity must be numbers');
       return;
     }
 
@@ -118,7 +118,7 @@ export default function MedicationsScreen() {
         reorderLevel,
         status,
       });
-      Alert.alert('Erfolg', 'Medikament aktualisiert');
+      Alert.alert('Success', 'Medication updated');
     } else {
       const newMed: MedicationRegistry = {
         id: `med${Date.now()}`,
@@ -131,7 +131,7 @@ export default function MedicationsScreen() {
         status,
       };
       addMedicationRegistry(newMed);
-      Alert.alert('Erfolg', 'Medikament registriert');
+      Alert.alert('Success', 'Medication registered');
     }
 
     setShowCreateModal(false);
@@ -148,18 +148,18 @@ export default function MedicationsScreen() {
 
   const handleAssignMedication = () => {
     if (!assignmentData.patientId || !assignmentData.medicationId || !assignmentData.frequency) {
-      Alert.alert('Fehler', 'Bitte alle Pflichtfelder ausfüllen');
+      Alert.alert('Error', 'Please fill all required fields');
       return;
     }
 
     const med = medicationRegistry.find(m => m.id === assignmentData.medicationId);
     if (!med) {
-      Alert.alert('Fehler', 'Medikament nicht gefunden');
+      Alert.alert('Error', 'Medication not found');
       return;
     }
 
     if (med.stockQuantity === 0) {
-      Alert.alert('Fehler', 'Medikament nicht auf Lager');
+      Alert.alert('Error', 'Medication out of stock');
       return;
     }
 
@@ -189,12 +189,12 @@ export default function MedicationsScreen() {
       frequency: '',
       instructions: '',
     });
-    Alert.alert('Erfolg', 'Medikament zugewiesen und Lagerbestand aktualisiert');
+    Alert.alert('Success', 'Medication assigned and stock updated');
   };
 
   const handleCreateInvoice = () => {
     if (!billingData.patientId || billingData.selectedMedications.length === 0) {
-      Alert.alert('Fehler', 'Bitte Patient und Medikamente auswählen');
+      Alert.alert('Error', 'Please select patient and medications');
       return;
     }
 
@@ -248,22 +248,22 @@ export default function MedicationsScreen() {
       medicationQuantities: {},
       notes: '',
     });
-    Alert.alert('Erfolg', 'Rechnung erstellt und in Rechnungen gespeichert');
+    Alert.alert('Success', 'Invoice created and saved in Invoices');
   };
 
   const handleDeleteMedication = (med: MedicationRegistry) => {
     Alert.alert(
-      'Medikament löschen',
-      `Möchten Sie ${med.name} wirklich löschen?`,
+      'Delete Medication',
+      `Are you sure you want to delete ${med.name}?`,
       [
-        { text: 'Abbrechen', style: 'cancel' },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Löschen',
+          text: 'Delete',
           style: 'destructive',
           onPress: () => {
             deleteMedicationRegistry(med.id);
             setSelectedMedication(null);
-            Alert.alert('Erfolg', 'Medikament gelöscht');
+            Alert.alert('Success', 'Medication deleted');
           },
         },
       ]
@@ -301,13 +301,13 @@ export default function MedicationsScreen() {
   const renderRegistryTab = () => (
     <ScrollView style={styles.tabContent} contentContainerStyle={styles.tabContentPadding}>
       <View style={styles.tabHeader}>
-        <Text style={styles.tabTitle}>Medikamenten-Register</Text>
+        <Text style={styles.tabTitle}>Medication Registry</Text>
         <TouchableOpacity
           style={styles.addButton}
           onPress={() => setShowCreateModal(true)}
         >
           <Plus size={20} color="#007AFF" />
-          <Text style={styles.addButtonText}>Registrieren</Text>
+          <Text style={styles.addButtonText}>Register</Text>
         </TouchableOpacity>
       </View>
 
@@ -316,7 +316,7 @@ export default function MedicationsScreen() {
           <Search size={20} color="#8E8E93" />
           <TextInput
             style={styles.searchInput}
-            placeholder="Nach Medikament suchen..."
+            placeholder="Search medication..."
             value={registrySearchQuery}
             onChangeText={setRegistrySearchQuery}
             placeholderTextColor="#8E8E93"
@@ -330,7 +330,7 @@ export default function MedicationsScreen() {
       </View>
 
       <Text style={styles.resultCount}>
-        {filteredRegistry.length} {filteredRegistry.length === 1 ? 'Medikament' : 'Medikamente'}
+        {filteredRegistry.length} {filteredRegistry.length === 1 ? 'Medication' : 'Medications'}
       </Text>
 
       {filteredRegistry.map(med => {
@@ -361,23 +361,23 @@ export default function MedicationsScreen() {
 
               <View style={styles.stockInfo}>
                 <View style={styles.stockRow}>
-                  <Text style={styles.stockLabel}>Lagerbestand:</Text>
+                  <Text style={styles.stockLabel}>Stock:</Text>
                   <Text style={[
                     styles.stockValue,
                     status === 'out_of_stock' && styles.stockOutOfStock,
                     status === 'low_stock' && styles.stockLowStock,
                   ]}>
-                    {med.stockQuantity} Stück
+                    {med.stockQuantity} units
                   </Text>
                 </View>
                 <View style={styles.stockRow}>
-                  <Text style={styles.stockLabel}>Preis:</Text>
+                  <Text style={styles.stockLabel}>Price:</Text>
                   <Text style={styles.priceValue}>€{med.unitPrice.toFixed(2)}</Text>
                 </View>
                 <View style={styles.stockRow}>
                   <Text style={styles.stockLabel}>Status:</Text>
                   <Badge 
-                    label={status === 'available' ? 'Verfügbar' : status === 'low_stock' ? 'Niedrig' : 'Ausverkauft'} 
+                    label={status === 'available' ? 'Available' : status === 'low_stock' ? 'Low Stock' : 'Out of Stock'} 
                     variant={status === 'available' ? 'success' : status === 'low_stock' ? 'warning' : 'danger'} 
                   />
                 </View>
@@ -402,14 +402,14 @@ export default function MedicationsScreen() {
                     }}
                   >
                     <Edit2 size={16} color="#007AFF" />
-                    <Text style={styles.editButtonText}>Bearbeiten</Text>
+                    <Text style={styles.editButtonText}>Edit</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.deleteButton}
                     onPress={() => handleDeleteMedication(med)}
                   >
                     <Trash2 size={16} color="#FF3B30" />
-                    <Text style={styles.deleteButtonText}>Löschen</Text>
+                    <Text style={styles.deleteButtonText}>Delete</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -423,17 +423,17 @@ export default function MedicationsScreen() {
   const renderAssignmentTab = () => (
     <ScrollView style={styles.tabContent} contentContainerStyle={styles.tabContentPadding}>
       <View style={styles.tabHeader}>
-        <Text style={styles.tabTitle}>Medikament zuweisen</Text>
+        <Text style={styles.tabTitle}>Assign Medication</Text>
       </View>
 
       <Card style={styles.formCard}>
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Patient auswählen *</Text>
+          <Text style={styles.label}>Select Patient *</Text>
           <View style={styles.searchBar}>
             <Search size={18} color="#8E8E93" />
             <TextInput
               style={styles.searchInput}
-              placeholder="Patient suchen..."
+              placeholder="Search patient..."
               value={patientSearchQuery}
               onChangeText={setPatientSearchQuery}
               placeholderTextColor="#8E8E93"
@@ -468,12 +468,12 @@ export default function MedicationsScreen() {
         </View>
 
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Medikament aus Register *</Text>
+          <Text style={styles.label}>Medication from Registry *</Text>
           <View style={styles.searchBar}>
             <Search size={18} color="#8E8E93" />
             <TextInput
               style={styles.searchInput}
-              placeholder="Medikament suchen..."
+              placeholder="Search medication..."
               value={medicationSearchQuery}
               onChangeText={setMedicationSearchQuery}
               placeholderTextColor="#8E8E93"
@@ -508,7 +508,7 @@ export default function MedicationsScreen() {
         </View>
 
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Häufigkeit *</Text>
+          <Text style={styles.label}>Frequency *</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.frequencyScroll}>
             {frequencyOptions.map((freq) => (
               <TouchableOpacity
@@ -530,23 +530,23 @@ export default function MedicationsScreen() {
               </TouchableOpacity>
             ))}
           </ScrollView>
-          {assignmentData.frequency === 'Andere' && (
+          {assignmentData.frequency === 'Other' && (
             <TextInput
               style={[styles.input, { marginTop: 12 }]}
-              value={assignmentData.frequency !== 'Andere' ? '' : assignmentData.frequency}
+              value={assignmentData.frequency !== 'Other' ? '' : assignmentData.frequency}
               onChangeText={(text) => setAssignmentData({ ...assignmentData, frequency: text })}
-              placeholder="Benutzerdefinierte Häufigkeit eingeben"
+              placeholder="Enter custom frequency"
             />
           )}
         </View>
 
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Anweisungen</Text>
+          <Text style={styles.label}>Instructions</Text>
           <TextInput
             style={[styles.input, styles.textArea]}
             value={assignmentData.instructions}
             onChangeText={(text) => setAssignmentData({ ...assignmentData, instructions: text })}
-            placeholder="Besondere Anweisungen..."
+            placeholder="Special instructions..."
             multiline
             numberOfLines={3}
           />
@@ -556,14 +556,14 @@ export default function MedicationsScreen() {
           style={styles.assignButton}
           onPress={handleAssignMedication}
         >
-          <Text style={styles.assignButtonText}>Medikament zuweisen</Text>
+          <Text style={styles.assignButtonText}>Assign Medication</Text>
         </TouchableOpacity>
       </Card>
 
       <View style={styles.assignedSection}>
-        <Text style={styles.sectionTitle}>Zugewiesene Medikamente</Text>
+        <Text style={styles.sectionTitle}>Assigned Medications</Text>
         <Text style={styles.resultCount}>
-          {medications.filter(m => m.status === 'active').length} aktive Medikamente
+          {medications.filter(m => m.status === 'active').length} active medications
         </Text>
 
         {medications.filter(m => m.status === 'active').map(medication => (
@@ -606,17 +606,17 @@ export default function MedicationsScreen() {
     return (
       <ScrollView style={styles.tabContent} contentContainerStyle={styles.tabContentPadding}>
         <View style={styles.tabHeader}>
-          <Text style={styles.tabTitle}>Rechnung erstellen</Text>
+          <Text style={styles.tabTitle}>Create Invoice</Text>
         </View>
 
         <Card style={styles.formCard}>
           <View style={styles.formGroup}>
-            <Text style={styles.label}>Patient auswählen *</Text>
+            <Text style={styles.label}>Select Patient *</Text>
             <View style={styles.searchBar}>
               <Search size={18} color="#8E8E93" />
               <TextInput
                 style={styles.searchInput}
-                placeholder="Patient suchen..."
+                placeholder="Search patient..."
                 value={billingPatientSearchQuery}
                 onChangeText={setBillingPatientSearchQuery}
                 placeholderTextColor="#8E8E93"
@@ -654,7 +654,7 @@ export default function MedicationsScreen() {
 
           {billingData.patientId && (
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Medikamente auswählen *</Text>
+              <Text style={styles.label}>Select Medications *</Text>
               {patientMedications.length > 0 ? (
                 patientMedications.map(med => {
                   const regMed = medicationRegistry.find(rm => rm.name === med.name && rm.dosage === med.dosage);
@@ -701,7 +701,7 @@ export default function MedicationsScreen() {
                       </TouchableOpacity>
                       {billingData.selectedMedications.includes(med.id) && (
                         <View style={styles.quantitySelector}>
-                          <Text style={styles.quantityLabel}>Menge:</Text>
+                          <Text style={styles.quantityLabel}>Quantity:</Text>
                           <View style={styles.quantityControls}>
                             <TouchableOpacity
                               style={styles.quantityButton}
@@ -742,7 +742,7 @@ export default function MedicationsScreen() {
                 })
               ) : (
                 <Text style={styles.noMedicationsText}>
-                  Keine aktiven Medikamente für diesen Patienten
+                  No active medications for this patient
                 </Text>
               )}
             </View>
@@ -751,22 +751,22 @@ export default function MedicationsScreen() {
           {billingData.selectedMedications.length > 0 && (
             <View style={styles.billingInfo}>
               <View style={styles.formGroup}>
-                <Text style={styles.label}>Notizen (optional)</Text>
+                <Text style={styles.label}>Notes (optional)</Text>
                 <TextInput
                   style={[styles.input, styles.textArea]}
                   value={billingData.notes}
                   onChangeText={(text) => setBillingData(prev => ({ ...prev, notes: text }))}
-                  placeholder="Zusätzliche Notizen zur Rechnung..."
+                  placeholder="Additional invoice notes..."
                   multiline
                   numberOfLines={3}
                 />
               </View>
               <View style={styles.billingRow}>
-                <Text style={styles.billingLabel}>Ausgewählte Medikamente:</Text>
+                <Text style={styles.billingLabel}>Selected Medications:</Text>
                 <Text style={styles.billingValue}>{billingData.selectedMedications.length}</Text>
               </View>
               <View style={styles.billingRow}>
-                <Text style={styles.billingLabel}>Geschätzter Gesamtpreis:</Text>
+                <Text style={styles.billingLabel}>Estimated Total:</Text>
                 <Text style={styles.billingValue}>
                   €{billingData.selectedMedications.reduce((sum, medId) => {
                     const med = medications.find(m => m.id === medId);
@@ -781,7 +781,7 @@ export default function MedicationsScreen() {
                 onPress={handleCreateInvoice}
               >
                 <FileText size={20} color="#FFFFFF" />
-                <Text style={styles.createInvoiceButtonText}>Rechnung erstellen</Text>
+                <Text style={styles.createInvoiceButtonText}>Create Invoice</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -794,7 +794,7 @@ export default function MedicationsScreen() {
     <>
       <Stack.Screen
         options={{
-          title: 'Medikamente',
+          title: 'Meds',
           headerLargeTitle: true,
         }}
       />
@@ -813,7 +813,7 @@ export default function MedicationsScreen() {
             onPress={() => setActiveTab('assignment')}
           >
             <Text style={[styles.tabText, activeTab === 'assignment' && styles.tabTextActive]}>
-              Zuweisung
+              Assignment
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -821,7 +821,7 @@ export default function MedicationsScreen() {
             onPress={() => setActiveTab('billing')}
           >
             <Text style={[styles.tabText, activeTab === 'billing' && styles.tabTextActive]}>
-              Rechnung
+              Billing
             </Text>
           </TouchableOpacity>
         </View>
@@ -842,7 +842,7 @@ export default function MedicationsScreen() {
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>{editingMedication ? 'Medikament bearbeiten' : 'Medikament registrieren'}</Text>
+                <Text style={styles.modalTitle}>{editingMedication ? 'Edit Medication' : 'Register Medication'}</Text>
                 <TouchableOpacity onPress={() => {
                   setShowCreateModal(false);
                   setEditingMedication(null);
@@ -853,60 +853,60 @@ export default function MedicationsScreen() {
 
               <ScrollView style={styles.modalScroll}>
                 <View style={styles.formGroup}>
-                  <Text style={styles.label}>Medikamentenname *</Text>
+                  <Text style={styles.label}>Medication Name *</Text>
                   <TextInput
                     style={styles.input}
                     value={newMedication.name}
                     onChangeText={(text) => setNewMedication({ ...newMedication, name: text })}
-                    placeholder="z.B. Aspirin"
+                    placeholder="e.g. Aspirin"
                   />
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.label}>Dosierung *</Text>
+                  <Text style={styles.label}>Dosage *</Text>
                   <TextInput
                     style={styles.input}
                     value={newMedication.dosage}
                     onChangeText={(text) => setNewMedication({ ...newMedication, dosage: text })}
-                    placeholder="z.B. 100mg"
+                    placeholder="e.g. 100mg"
                   />
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.label}>Preis pro Einheit (€) *</Text>
+                  <Text style={styles.label}>Unit Price (€) *</Text>
                   <TextInput
                     style={styles.input}
                     value={newMedication.unitPrice}
                     onChangeText={(text) => setNewMedication({ ...newMedication, unitPrice: text })}
-                    placeholder="z.B. 5.50"
+                    placeholder="e.g. 5.50"
                     keyboardType="decimal-pad"
                   />
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.label}>Lagerbestand (Stück) *</Text>
+                  <Text style={styles.label}>Stock Quantity (units) *</Text>
                   <TextInput
                     style={styles.input}
                     value={newMedication.stockQuantity}
                     onChangeText={(text) => setNewMedication({ ...newMedication, stockQuantity: text })}
-                    placeholder="z.B. 500"
+                    placeholder="e.g. 500"
                     keyboardType="number-pad"
                   />
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.label}>Mindestbestand (Stück)</Text>
+                  <Text style={styles.label}>Reorder Level (units)</Text>
                   <TextInput
                     style={styles.input}
                     value={newMedication.reorderLevel}
                     onChangeText={(text) => setNewMedication({ ...newMedication, reorderLevel: text })}
-                    placeholder="z.B. 100"
+                    placeholder="e.g. 100"
                     keyboardType="number-pad"
                   />
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.label}>Verabreichungsweg</Text>
+                  <Text style={styles.label}>Route</Text>
                   <View style={styles.routeButtons}>
                     {(['oral', 'iv', 'im', 'topical', 'other'] as const).map((route) => (
                       <TouchableOpacity
@@ -939,13 +939,13 @@ export default function MedicationsScreen() {
                     setEditingMedication(null);
                   }}
                 >
-                  <Text style={styles.cancelButtonText}>Abbrechen</Text>
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.modalButton, styles.confirmButton]}
                   onPress={handleRegisterMedication}
                 >
-                  <Text style={styles.confirmButtonText}>{editingMedication ? 'Aktualisieren' : 'Registrieren'}</Text>
+                  <Text style={styles.confirmButtonText}>{editingMedication ? 'Update' : 'Register'}</Text>
                 </TouchableOpacity>
               </View>
             </View>
