@@ -129,21 +129,21 @@ export default function InvoicesScreen() {
   }
 
   const statusTabs: { label: string; value: InvoiceStatus | 'all'; count: number }[] = [
-    { label: 'Alle', value: 'all', count: invoices.length },
-    { label: 'Entwurf', value: 'draft', count: invoices.filter(i => i.status === 'draft').length },
-    { label: 'Gesendet', value: 'sent', count: invoices.filter(i => i.status === 'sent').length },
-    { label: 'Bezahlt', value: 'paid', count: invoices.filter(i => i.status === 'paid').length },
-    { label: 'Überfällig', value: 'overdue', count: invoices.filter(i => i.status === 'overdue').length },
+    { label: 'All', value: 'all', count: invoices.length },
+    { label: 'Draft', value: 'draft', count: invoices.filter(i => i.status === 'draft').length },
+    { label: 'Sent', value: 'sent', count: invoices.filter(i => i.status === 'sent').length },
+    { label: 'Paid', value: 'paid', count: invoices.filter(i => i.status === 'paid').length },
+    { label: 'Overdue', value: 'overdue', count: invoices.filter(i => i.status === 'overdue').length },
   ];
 
   const handleCreateInvoice = () => {
     if (!selectedPatientId) {
-      Alert.alert('Fehler', 'Bitte wählen Sie einen Patienten aus');
+      Alert.alert('Error', 'Please select a patient');
       return;
     }
 
     if (selectedMedications.length === 0) {
-      Alert.alert('Fehler', 'Bitte wählen Sie mindestens ein Medikament aus');
+      Alert.alert('Error', 'Please select at least one medication');
       return;
     }
 
@@ -168,26 +168,26 @@ export default function InvoicesScreen() {
       };
     }).filter(Boolean) as InvoiceItem[];
 
-    Alert.alert('Info', 'Bitte verwenden Sie die Medikamenten-Seite (Tab "Rechnung"), um Rechnungen zu erstellen.');
+    Alert.alert('Info', 'Please use the Medications page (Billing tab) to create invoices.');
     setShowCreateModal(false);
     setSelectedPatientId('');
     setSelectedMedications([]);
-    Alert.alert('Erfolg', 'Rechnung erfolgreich erstellt');
+    Alert.alert('Success', 'Invoice created successfully');
   };
 
   const handleDeleteInvoice = (invoiceId: string) => {
     Alert.alert(
-      'Rechnung löschen',
-      'Möchten Sie diese Rechnung wirklich löschen?',
+      'Delete Invoice',
+      'Do you really want to delete this invoice?',
       [
-        { text: 'Abbrechen', style: 'cancel' },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Löschen',
+          text: 'Delete',
           style: 'destructive',
           onPress: () => {
             deleteInvoice(invoiceId);
             setSelectedInvoice(null);
-            Alert.alert('Erfolg', 'Rechnung gelöscht');
+            Alert.alert('Success', 'Invoice deleted');
           },
         },
       ]
@@ -196,7 +196,7 @@ export default function InvoicesScreen() {
 
   const handleUpdateInvoiceStatus = (invoiceId: string, status: Invoice['status']) => {
     updateInvoice(invoiceId, { status });
-    Alert.alert('Erfolg', `Status auf "${status}" aktualisiert`);
+    Alert.alert('Success', `Status updated to "${status}"`);
   };
 
   const generatePDFContent = (invoice: Invoice): string => {
@@ -439,7 +439,7 @@ export default function InvoicesScreen() {
     <>
       <Stack.Screen
         options={{
-          title: 'Rechnungen',
+          title: 'Invoices',
           headerLargeTitle: true,
           headerRight: () => (
             <TouchableOpacity style={styles.addButton} onPress={() => setShowCreateModal(true)}>
@@ -457,7 +457,7 @@ export default function InvoicesScreen() {
                   <View style={styles.statIconContainer}>
                     <DollarSign size={20} color="#34C759" />
                   </View>
-                  <Text style={styles.statLabel}>Bezahlt (Monat)</Text>
+                  <Text style={styles.statLabel}>Paid (Month)</Text>
                 </View>
                 <Text style={styles.statValue}>€{monthlyStats.paidThisMonth.toFixed(2)}</Text>
                 <View style={styles.statChange}>
@@ -480,11 +480,11 @@ export default function InvoicesScreen() {
                   <View style={[styles.statIconContainer, { backgroundColor: '#E5F3FF' }]}>
                     <FileText size={20} color="#007AFF" />
                   </View>
-                  <Text style={styles.statLabel}>Versendet</Text>
+                  <Text style={styles.statLabel}>Sent</Text>
                 </View>
                 <Text style={styles.statValue}>€{monthlyStats.sentThisMonth.toFixed(2)}</Text>
                 <Text style={styles.statSubtext}>
-                  {invoices.filter(i => i.status === 'sent').length} Rechnungen
+                  {invoices.filter(i => i.status === 'sent').length} Invoices
                 </Text>
               </Card>
 
@@ -493,11 +493,11 @@ export default function InvoicesScreen() {
                   <View style={[styles.statIconContainer, { backgroundColor: '#FFE5E5' }]}>
                     <Clock size={20} color="#FF3B30" />
                   </View>
-                  <Text style={styles.statLabel}>Überfällig</Text>
+                  <Text style={styles.statLabel}>Overdue</Text>
                 </View>
                 <Text style={[styles.statValue, { color: '#FF3B30' }]}>€{monthlyStats.overdueTotal.toFixed(2)}</Text>
                 <Text style={styles.statSubtext}>
-                  {invoices.filter(i => i.status === 'overdue').length} Rechnungen
+                  {invoices.filter(i => i.status === 'overdue').length} Invoices
                 </Text>
               </Card>
 
@@ -506,11 +506,11 @@ export default function InvoicesScreen() {
                   <View style={[styles.statIconContainer, { backgroundColor: '#F2F2F7' }]}>
                     <FileText size={20} color="#8E8E93" />
                   </View>
-                  <Text style={styles.statLabel}>Entwürfe</Text>
+                  <Text style={styles.statLabel}>Drafts</Text>
                 </View>
                 <Text style={styles.statValue}>€{monthlyStats.draftTotal.toFixed(2)}</Text>
                 <Text style={styles.statSubtext}>
-                  {invoices.filter(i => i.status === 'draft').length} Rechnungen
+                  {invoices.filter(i => i.status === 'draft').length} Invoices
                 </Text>
               </Card>
             </View>
@@ -559,7 +559,7 @@ export default function InvoicesScreen() {
               <Search size={18} color="#8E8E93" style={styles.searchIcon} />
               <TextInput
                 style={styles.searchInput}
-                placeholder="Nach Patient oder Rechnungsnummer suchen..."
+                placeholder="Search by patient or invoice number..."
                 placeholderTextColor="#C7C7CC"
                 value={searchQuery}
                 onChangeText={setSearchQuery}
@@ -579,7 +579,7 @@ export default function InvoicesScreen() {
 
           <View style={styles.listContainer}>
           <Text style={styles.resultCount}>
-            {filteredInvoices.length} {filteredInvoices.length === 1 ? 'Rechnung' : 'Rechnungen'} • {groupedInvoices.length} {groupedInvoices.length === 1 ? 'Patient' : 'Patienten'}
+            {filteredInvoices.length} {filteredInvoices.length === 1 ? 'Invoice' : 'Invoices'} • {groupedInvoices.length} {groupedInvoices.length === 1 ? 'Patient' : 'Patients'}
           </Text>
 
           {groupedInvoices.map(group => (
@@ -604,9 +604,9 @@ export default function InvoicesScreen() {
                   <View style={styles.patientGroupInfo}>
                     <Text style={styles.patientGroupName}>{group.patientName}</Text>
                     <Text style={styles.patientGroupStats}>
-                      {group.invoices.length} {group.invoices.length === 1 ? 'Rechnung' : 'Rechnungen'}
+                      {group.invoices.length} {group.invoices.length === 1 ? 'Invoice' : 'Invoices'}
                       {group.unpaidAmount > 0 && (
-                        <Text style={styles.unpaidAmount}> • €{group.unpaidAmount.toFixed(2)} offen</Text>
+                        <Text style={styles.unpaidAmount}> • €{group.unpaidAmount.toFixed(2)} unpaid</Text>
                       )}
                     </Text>
                   </View>
@@ -652,13 +652,13 @@ export default function InvoicesScreen() {
 
                 <View style={styles.compactInfo}>
                   <View style={styles.compactRow}>
-                    <Text style={styles.compactLabel}>Datum:</Text>
+                    <Text style={styles.compactLabel}>Date:</Text>
                     <Text style={styles.compactValue}>
-                      {new Date(invoice.date).toLocaleDateString('de-DE')}
+                      {new Date(invoice.date).toLocaleDateString('en-US')}
                     </Text>
                   </View>
                   <View style={styles.compactRow}>
-                    <Text style={styles.compactLabel}>Summe:</Text>
+                    <Text style={styles.compactLabel}>Total:</Text>
                     <Text style={styles.totalAmount}>€{invoice.total.toFixed(2)}</Text>
                   </View>
                 </View>
@@ -667,27 +667,27 @@ export default function InvoicesScreen() {
                   <>
                     <View style={styles.expandedInfo}>
                       <View style={styles.metaRow}>
-                        <Text style={styles.metaLabel}>Fällig:</Text>
+                        <Text style={styles.metaLabel}>Due:</Text>
                         <Text style={styles.metaValue}>
-                          {new Date(invoice.dueDate).toLocaleDateString('de-DE')}
+                          {new Date(invoice.dueDate).toLocaleDateString('en-US')}
                         </Text>
                       </View>
                       <View style={styles.metaRow}>
-                        <Text style={styles.metaLabel}>Positionen:</Text>
+                        <Text style={styles.metaLabel}>Items:</Text>
                         <Text style={styles.metaValue}>{invoice.items.length}</Text>
                       </View>
                       <View style={styles.metaRow}>
-                        <Text style={styles.metaLabel}>Zwischensumme:</Text>
+                        <Text style={styles.metaLabel}>Subtotal:</Text>
                         <Text style={styles.metaValue}>€{invoice.subtotal.toFixed(2)}</Text>
                       </View>
                       <View style={styles.metaRow}>
-                        <Text style={styles.metaLabel}>MwSt. (19%):</Text>
+                        <Text style={styles.metaLabel}>Tax (19%):</Text>
                         <Text style={styles.metaValue}>€{invoice.tax.toFixed(2)}</Text>
                       </View>
                     </View>
 
                     <View style={styles.statusUpdateSection}>
-                      <Text style={styles.statusUpdateLabel}>Status ändern:</Text>
+                      <Text style={styles.statusUpdateLabel}>Change status:</Text>
                       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.statusChips}>
                         {(['draft', 'sent', 'paid', 'overdue', 'cancelled'] as const).map((status) => (
                           <TouchableOpacity
@@ -704,7 +704,7 @@ export default function InvoicesScreen() {
                                 invoice.status === status && styles.statusChipTextActive,
                               ]}
                             >
-                              {status === 'draft' ? 'Entwurf' : status === 'sent' ? 'Gesendet' : status === 'paid' ? 'Bezahlt' : status === 'overdue' ? 'Überfällig' : 'Storniert'}
+                              {status === 'draft' ? 'Draft' : status === 'sent' ? 'Sent' : status === 'paid' ? 'Paid' : status === 'overdue' ? 'Overdue' : 'Cancelled'}
                             </Text>
                           </TouchableOpacity>
                         ))}
@@ -717,7 +717,7 @@ export default function InvoicesScreen() {
                         onPress={() => handleViewInvoice(invoice)}
                       >
                         <Eye size={16} color="#007AFF" />
-                        <Text style={styles.viewButtonText}>Ansehen</Text>
+                        <Text style={styles.viewButtonText}>View</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={styles.downloadButton}
@@ -747,12 +747,12 @@ export default function InvoicesScreen() {
             <View style={styles.emptyState}>
               <FileText size={64} color="#C7C7CC" />
               <Text style={styles.emptyText}>
-                {searchQuery.trim() ? 'Keine Rechnungen gefunden' : 'Keine Rechnungen vorhanden'}
+                {searchQuery.trim() ? 'No invoices found' : 'No invoices available'}
               </Text>
               <Text style={styles.emptySubtext}>
                 {searchQuery.trim() 
-                  ? 'Versuchen Sie eine andere Suche' 
-                  : 'Erstellen Sie eine neue Rechnung für Medikamente'
+                  ? 'Try a different search' 
+                  : 'Create a new invoice for medications'
                 }
               </Text>
             </View>
@@ -769,7 +769,7 @@ export default function InvoicesScreen() {
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Neue Medikamenten-Rechnung</Text>
+                <Text style={styles.modalTitle}>New Medication Invoice</Text>
                 <TouchableOpacity onPress={() => setShowCreateModal(false)}>
                   <X size={24} color="#8E8E93" />
                 </TouchableOpacity>
@@ -777,7 +777,7 @@ export default function InvoicesScreen() {
 
               <ScrollView style={styles.modalScroll}>
                 <View style={styles.formSection}>
-                  <Text style={styles.sectionLabel}>Patient auswählen:</Text>
+                  <Text style={styles.sectionLabel}>Select Patient:</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                     {patients.map(patient => (
                       <TouchableOpacity
@@ -806,7 +806,7 @@ export default function InvoicesScreen() {
 
                 {selectedPatientId && (
                   <View style={styles.formSection}>
-                    <Text style={styles.sectionLabel}>Medikamente auswählen:</Text>
+                    <Text style={styles.sectionLabel}>Select Medications:</Text>
                     <ScrollView style={styles.medicationList}>
                       {patientMedications.length > 0 ? (
                         patientMedications.map(med => (
@@ -837,7 +837,7 @@ export default function InvoicesScreen() {
                         ))
                       ) : (
                         <Text style={styles.noMedicationsText}>
-                          Keine aktiven Medikamente für diesen Patienten
+                          No active medications for this patient
                         </Text>
                       )}
                     </ScrollView>
@@ -854,13 +854,13 @@ export default function InvoicesScreen() {
                     setSelectedMedications([]);
                   }}
                 >
-                  <Text style={styles.cancelButtonText}>Abbrechen</Text>
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.modalButton, styles.confirmButton]}
                   onPress={handleCreateInvoice}
                 >
-                  <Text style={styles.confirmButtonText}>Erstellen</Text>
+                  <Text style={styles.confirmButtonText}>Create</Text>
                 </TouchableOpacity>
               </View>
             </View>
