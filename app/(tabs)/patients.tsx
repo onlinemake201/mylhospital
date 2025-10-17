@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { ScrollView, View, Text, StyleSheet, TextInput, TouchableOpacity, Modal, Alert } from 'react-native';
+import React, { useState, useEffect, useMemo } from 'react';
+import { ScrollView, View, Text, StyleSheet, TextInput, TouchableOpacity, Modal, Alert, SectionList } from 'react-native';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
-import { Search, Plus, Filter, X, Edit2, Trash2 } from 'lucide-react-native';
+import { Search, Plus, X, Edit2, Trash2, ArrowUpDown } from 'lucide-react-native';
 import { PatientCard } from '@/components/PatientCard';
 import { useHospital } from '@/contexts/HospitalContext';
 import { Patient } from '@/types';
@@ -12,6 +12,7 @@ export default function PatientsScreen() {
   const { patients, addPatient, updatePatient, deletePatient } = useHospital();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<Patient['status'] | 'all'>('all');
+  const [sortBy, setSortBy] = useState<'name' | 'mrn' | 'recent'>('name');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
@@ -27,16 +28,52 @@ export default function PatientsScreen() {
     status: 'outpatient' as Patient['status'],
   });
 
-  const filteredPatients = patients.filter(patient => {
-    const matchesSearch =
-      patient.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      patient.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      patient.mrn.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredAndSortedPatients = useMemo(() => {
+    let filtered = patients.filter(patient => {
+      const matchesSearch =
+        patient.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        patient.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        patient.mrn.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesFilter = filterStatus === 'all' || patient.status === filterStatus;
+      const matchesFilter = filterStatus === 'all' || patient.status === filterStatus;
 
-    return matchesSearch && matchesFilter;
-  });
+      return matchesSearch && matchesFilter;
+    });
+
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`);
+        case 'mrn':
+          return a.mrn.localeCompare(b.mrn);
+        case 'recent':
+          return (b.admissionDate || '').localeCompare(a.admissionDate || '');
+        default:
+          return 0;
+      }
+    });
+
+    return filtered;
+  }, [patients, searchQuery, filterStatus, sortBy]);
+
+  const groupedPatients = useMemo(() => {
+    const groups: { [key: string]: Patient[] } = {};
+    
+    filteredAndSortedPatients.forEach(patient => {
+      const firstLetter = patient.lastName[0].toUpperCase();
+      if (!groups[firstLetter]) {
+        groups[firstLetter] = [];
+      }
+      groups[firstLetter].push(patient);
+    });
+
+    return Object.keys(groups)
+      .sort()
+      .map(letter => ({
+        title: letter,
+        data: groups[letter],
+      }));
+  }, [filteredAndSortedPatients]);
 
   useEffect(() => {
     if (edit) {
@@ -94,10 +131,46 @@ export default function PatientsScreen() {
               onChangeText={setSearchQuery}
               placeholderTextColor="#8E8E93"
             />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <X size={18} color="#8E8E93" />
+              </TouchableOpacity>
+            )}
           </View>
-          <TouchableOpacity style={styles.filterButton}>
-            <Filter size={20} color="#007AFF" />
+          <TouchableOpacity 
+            style={styles.filterButton}
+            onPress={() => {
+              if (sortBy === 'name') setSortBy('mrn');
+              else if (sortBy === 'mrn') setSortBy('recent');
+              else setSortBy('name');
+            }}
+          >
+            <ArrowUpDown size={20} color="#007AFF" />
           </TouchableOpacity>
+        </View>
+
+        <View style={styles.sortContainer}>
+          <Text style={styles.sortLabel}>Sort by:</Text>
+          <View style={styles.sortButtons}>
+            <TouchableOpacity
+              style={[styles.sortButton, sortBy === 'name' && styles.sortButtonActive]}
+              onPress={() => setSortBy('name')}
+            >
+              <Text style={[styles.sortButtonText, sortBy === 'name' && styles.sortButtonTextActive]}>Name</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.sortButton, sortBy === 'mrn' && styles.sortButtonActive]}
+              onPress={() => setSortBy('mrn')}
+            >
+              <Text style={[styles.sortButtonText, sortBy === 'mrn' && styles.sortButtonTextActive]}>MRN</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.sortButton, sortBy === 'recent' && styles.sortButtonActive]}
+              onPress={() => setSortBy('recent')}
+            >
+              <Text style={[styles.sortButtonText, sortBy === 'recent' && styles.sortButtonTextActive]}>Recent</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <ScrollView
@@ -127,12 +200,24 @@ export default function PatientsScreen() {
           ))}
         </ScrollView>
 
-        <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
-          <Text style={styles.resultCount}>
-            {filteredPatients.length} {filteredPatients.length === 1 ? 'patient' : 'patients'}
-          </Text>
-          {filteredPatients.map(patient => (
-            <View key={patient.id} style={styles.patientCardContainer}>
+        <Text style={styles.resultCount}>
+          {filteredAndSortedPatients.length} {filteredAndSortedPatients.length === 1 ? 'patient' : 'patients'}
+        </Text>
+
+        <SectionList
+          sections={groupedPatients}
+          keyExtractor={(item) => item.id}
+          style={styles.list}
+          contentContainerStyle={styles.listContent}
+          stickySectionHeadersEnabled
+          renderSectionHeader={({ section }) => (
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionHeaderText}>{section.title}</Text>
+              <View style={styles.sectionHeaderLine} />
+            </View>
+          )}
+          renderItem={({ item: patient }) => (
+            <View style={styles.patientCardContainer}>
               <View
                 style={[
                   styles.patientCardWrapper,
@@ -150,12 +235,12 @@ export default function PatientsScreen() {
                   onLongPress={() => router.push(`/patient-details/${patient.id}`)}
                   activeOpacity={0.7}
                 >
-                  <PatientCard patient={patient} />
+                  <PatientCard patient={patient} compact />
                 </TouchableOpacity>
               </View>
             </View>
-          ))}
-        </ScrollView>
+          )}
+        />
 
         {selectedPatient && (
           <View style={styles.bottomActionsContainer}>
@@ -521,14 +606,72 @@ const styles = StyleSheet.create({
   },
   list: {
     flex: 1,
+    backgroundColor: '#F2F2F7',
   },
   listContent: {
     padding: 16,
+    paddingBottom: 100,
   },
   resultCount: {
     fontSize: 14,
     color: '#8E8E93',
-    marginBottom: 12,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 12,
+    backgroundColor: '#F2F2F7',
+  },
+  sortContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5EA',
+  },
+  sortLabel: {
+    fontSize: 13,
+    color: '#8E8E93',
+    marginRight: 8,
+  },
+  sortButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  sortButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#F2F2F7',
+  },
+  sortButtonActive: {
+    backgroundColor: '#007AFF',
+  },
+  sortButtonText: {
+    fontSize: 12,
+    fontWeight: '500' as const,
+    color: '#3C3C43',
+  },
+  sortButtonTextActive: {
+    color: '#FFFFFF',
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#F2F2F7',
+  },
+  sectionHeaderText: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: '#007AFF',
+    marginRight: 12,
+  },
+  sectionHeaderLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E5E5EA',
   },
   addButton: {
     marginRight: 8,
@@ -721,7 +864,7 @@ const styles = StyleSheet.create({
     color: '#000000',
   },
   patientCardContainer: {
-    marginBottom: 12,
+    marginBottom: 8,
   },
   patientCardWrapper: {
     borderRadius: 12,
