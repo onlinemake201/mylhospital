@@ -91,7 +91,7 @@ export default function AppointmentsScreen() {
 
   const getDateRangeText = () => {
     if (viewMode === 'day') {
-      return selectedDate.toLocaleDateString('de-DE', {
+      return selectedDate.toLocaleDateString('en-US', {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
@@ -99,11 +99,11 @@ export default function AppointmentsScreen() {
       });
     } else if (viewMode === 'week') {
       const weekDays = getWeekDays(selectedDate);
-      const start = weekDays[0].toLocaleDateString('de-DE', { day: 'numeric', month: 'short' });
-      const end = weekDays[6].toLocaleDateString('de-DE', { day: 'numeric', month: 'short', year: 'numeric' });
+      const start = weekDays[0].toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+      const end = weekDays[6].toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
       return `${start} - ${end}`;
     } else {
-      return selectedDate.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+      return selectedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
     }
   };
 
@@ -161,7 +161,7 @@ export default function AppointmentsScreen() {
     console.log('Available patients:', patients.length);
     
     if (!newAppointment.patientId || !newAppointment.date || !newAppointment.time) {
-      Alert.alert('Fehler', 'Bitte alle Pflichtfelder ausfüllen');
+      Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
 
@@ -169,7 +169,7 @@ export default function AppointmentsScreen() {
     console.log('Found patient:', patient);
     
     if (!patient) {
-      Alert.alert('Fehler', 'Patient nicht gefunden');
+      Alert.alert('Error', 'Patient not found');
       return;
     }
 
@@ -185,7 +185,7 @@ export default function AppointmentsScreen() {
         room: newAppointment.room || undefined,
         notes: newAppointment.notes || undefined,
       });
-      Alert.alert('Erfolg', 'Termin erfolgreich aktualisiert');
+      Alert.alert('Success', 'Appointment updated successfully');
     } else {
       const appointment: Appointment = {
         id: `apt${Date.now()}`,
@@ -202,7 +202,7 @@ export default function AppointmentsScreen() {
         notes: newAppointment.notes || undefined,
       };
       addAppointment(appointment);
-      Alert.alert('Erfolg', 'Termin erfolgreich erstellt');
+      Alert.alert('Success', 'Appointment created successfully');
     }
 
     setShowCreateModal(false);
@@ -221,7 +221,7 @@ export default function AppointmentsScreen() {
 
   const handleCreateNewPatient = () => {
     if (!newPatient.firstName || !newPatient.lastName || !newPatient.dateOfBirth || !newPatient.contactNumber) {
-      Alert.alert('Fehler', 'Bitte alle Pflichtfelder ausfüllen');
+      Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
 
@@ -252,22 +252,22 @@ export default function AppointmentsScreen() {
       allergies: '',
       status: 'outpatient',
     });
-    Alert.alert('Erfolg', 'Patient erfolgreich erstellt und ausgewählt');
+    Alert.alert('Success', 'Patient created successfully and selected');
   };
 
   const handleDeleteAppointment = (appointment: Appointment) => {
     Alert.alert(
-      'Termin löschen',
-      `Möchten Sie den Termin für ${appointment.patientName} wirklich löschen?`,
+      'Delete Appointment',
+      `Do you really want to delete the appointment for ${appointment.patientName}?`,
       [
-        { text: 'Abbrechen', style: 'cancel' },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Löschen',
+          text: 'Delete',
           style: 'destructive',
           onPress: () => {
             deleteAppointment(appointment.id);
             setSelectedAppointment(null);
-            Alert.alert('Erfolg', 'Termin gelöscht');
+            Alert.alert('Success', 'Appointment deleted');
           },
         },
       ]
@@ -304,7 +304,7 @@ export default function AppointmentsScreen() {
                   viewMode === mode && styles.viewModeTextActive,
                 ]}
               >
-                {mode === 'day' ? 'Tag' : mode === 'week' ? 'Woche' : 'Monat'}
+                {mode === 'day' ? 'Day' : mode === 'week' ? 'Week' : 'Month'}
               </Text>
             </TouchableOpacity>
           ))}
@@ -330,7 +330,7 @@ export default function AppointmentsScreen() {
             activeOpacity={0.8}
           >
             <Plus size={20} color="#FFFFFF" />
-            <Text style={styles.createAppointmentButtonText}>Termin erstellen</Text>
+            <Text style={styles.createAppointmentButtonText}>Create Appointment</Text>
           </TouchableOpacity>
         </View>
 
@@ -338,7 +338,7 @@ export default function AppointmentsScreen() {
           <ScrollView style={styles.list}>
             <View style={styles.monthView}>
               <View style={styles.weekDaysHeader}>
-                {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map((day) => (
+                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
                   <Text key={day} style={styles.weekDayText}>{day}</Text>
                 ))}
               </View>
@@ -397,7 +397,7 @@ export default function AppointmentsScreen() {
                   <View key={day.toISOString()} style={styles.weekDayColumn}>
                     <View style={[styles.weekDayHeader, isToday && styles.weekDayHeaderToday]}>
                       <Text style={[styles.weekDayName, isToday && styles.weekDayNameToday]}>
-                        {day.toLocaleDateString('de-DE', { weekday: 'short' })}
+                        {day.toLocaleDateString('en-US', { weekday: 'short' })}
                       </Text>
                       <Text style={[styles.weekDayDate, isToday && styles.weekDayDateToday]}>
                         {day.getDate()}
@@ -430,14 +430,14 @@ export default function AppointmentsScreen() {
         {viewMode === 'day' && (
           <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
             <Text style={styles.resultCount}>
-              {filteredAppointments.length} {filteredAppointments.length === 1 ? 'Termin' : 'Termine'}
+              {filteredAppointments.length} {filteredAppointments.length === 1 ? 'appointment' : 'appointments'}
             </Text>
 
             {filteredAppointments.length === 0 ? (
               <View style={styles.emptyState}>
                 <Calendar size={48} color="#C7C7CC" />
-                <Text style={styles.emptyTitle}>Keine Termine</Text>
-                <Text style={styles.emptyText}>Für dieses Datum sind keine Termine geplant</Text>
+                <Text style={styles.emptyTitle}>No Appointments</Text>
+                <Text style={styles.emptyText}>No appointments scheduled for this date</Text>
               </View>
             ) : (
               filteredAppointments.map(appointment => (
@@ -477,7 +477,7 @@ export default function AppointmentsScreen() {
 
                       {appointment.notes && (
                         <View style={styles.notesContainer}>
-                          <Text style={styles.notesLabel}>Notizen:</Text>
+                          <Text style={styles.notesLabel}>Notes:</Text>
                           <Text style={styles.notesText}>{appointment.notes}</Text>
                         </View>
                       )}
@@ -504,14 +504,14 @@ export default function AppointmentsScreen() {
                           }}
                         >
                           <Edit2 size={16} color="#007AFF" />
-                          <Text style={styles.editButtonText}>Bearbeiten</Text>
+                          <Text style={styles.editButtonText}>Edit</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                           style={styles.deleteButton}
                           onPress={() => handleDeleteAppointment(appointment)}
                         >
                           <Trash2 size={16} color="#FF3B30" />
-                          <Text style={styles.deleteButtonText}>Löschen</Text>
+                          <Text style={styles.deleteButtonText}>Delete</Text>
                         </TouchableOpacity>
                       </View>
                     )}
@@ -534,7 +534,7 @@ export default function AppointmentsScreen() {
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>{editingAppointment ? 'Termin bearbeiten' : 'Neuer Termin'}</Text>
+                <Text style={styles.modalTitle}>{editingAppointment ? 'Edit Appointment' : 'New Appointment'}</Text>
                 <TouchableOpacity onPress={() => {
                   setShowCreateModal(false);
                   setEditingAppointment(null);
@@ -548,14 +548,14 @@ export default function AppointmentsScreen() {
                   <View style={styles.labelRow}>
                     <Text style={styles.label}>Patient *</Text>
                     <TouchableOpacity onPress={() => setShowNewPatientModal(true)}>
-                      <Text style={styles.newPatientLink}>+ Neuer Patient</Text>
+                      <Text style={styles.newPatientLink}>+ New Patient</Text>
                     </TouchableOpacity>
                   </View>
                   {patients.length === 0 ? (
                     <View style={styles.noPatients}>
-                      <Text style={styles.noPatientText}>Keine Patienten vorhanden</Text>
+                      <Text style={styles.noPatientText}>No patients available</Text>
                       <TouchableOpacity onPress={() => setShowNewPatientModal(true)} style={styles.addFirstPatientButton}>
-                        <Text style={styles.addFirstPatientText}>+ Ersten Patient erstellen</Text>
+                        <Text style={styles.addFirstPatientText}>+ Create First Patient</Text>
                       </TouchableOpacity>
                     </View>
                   ) : (
@@ -587,7 +587,7 @@ export default function AppointmentsScreen() {
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.label}>Datum *</Text>
+                  <Text style={styles.label}>Date *</Text>
                   <TextInput
                     style={styles.input}
                     value={newAppointment.date}
@@ -597,7 +597,7 @@ export default function AppointmentsScreen() {
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.label}>Uhrzeit *</Text>
+                  <Text style={styles.label}>Time *</Text>
                   <TextInput
                     style={styles.input}
                     value={newAppointment.time}
@@ -607,7 +607,7 @@ export default function AppointmentsScreen() {
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.label}>Dauer (Minuten)</Text>
+                  <Text style={styles.label}>Duration (Minutes)</Text>
                   <TextInput
                     style={styles.input}
                     value={String(newAppointment.duration)}
@@ -618,7 +618,7 @@ export default function AppointmentsScreen() {
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.label}>Termintyp</Text>
+                  <Text style={styles.label}>Appointment Type</Text>
                   <View style={styles.typeButtons}>
                     {(['consultation', 'follow_up', 'procedure', 'emergency'] as const).map((type) => (
                       <TouchableOpacity
@@ -635,7 +635,7 @@ export default function AppointmentsScreen() {
                             newAppointment.type === type && styles.typeButtonTextActive,
                           ]}
                         >
-                          {type === 'consultation' ? 'Konsultation' : type === 'follow_up' ? 'Nachsorge' : type === 'procedure' ? 'Eingriff' : 'Notfall'}
+                          {type === 'consultation' ? 'Consultation' : type === 'follow_up' ? 'Follow-up' : type === 'procedure' ? 'Procedure' : 'Emergency'}
                         </Text>
                       </TouchableOpacity>
                     ))}
@@ -660,7 +660,7 @@ export default function AppointmentsScreen() {
                             newAppointment.status === status && styles.statusButtonTextActive,
                           ]}
                         >
-                          {status === 'scheduled' ? 'Geplant' : status === 'confirmed' ? 'Bestätigt' : status === 'in_progress' ? 'Läuft' : status === 'completed' ? 'Abgeschlossen' : 'Abgesagt'}
+                          {status === 'scheduled' ? 'Scheduled' : status === 'confirmed' ? 'Confirmed' : status === 'in_progress' ? 'In Progress' : status === 'completed' ? 'Completed' : 'Cancelled'}
                         </Text>
                       </TouchableOpacity>
                     ))}
@@ -668,22 +668,22 @@ export default function AppointmentsScreen() {
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.label}>Raum</Text>
+                  <Text style={styles.label}>Room</Text>
                   <TextInput
                     style={styles.input}
                     value={newAppointment.room}
                     onChangeText={(text) => setNewAppointment({ ...newAppointment, room: text })}
-                    placeholder="z.B. Raum 301"
+                    placeholder="e.g. Room 301"
                   />
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.label}>Notizen</Text>
+                  <Text style={styles.label}>Notes</Text>
                   <TextInput
                     style={[styles.input, styles.textArea]}
                     value={newAppointment.notes}
                     onChangeText={(text) => setNewAppointment({ ...newAppointment, notes: text })}
-                    placeholder="Zusätzliche Informationen..."
+                    placeholder="Additional information..."
                     multiline
                     numberOfLines={3}
                   />
@@ -698,13 +698,13 @@ export default function AppointmentsScreen() {
                     setEditingAppointment(null);
                   }}
                 >
-                  <Text style={styles.cancelButtonText}>Abbrechen</Text>
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.modalButton, styles.confirmButton]}
                   onPress={handleCreateAppointment}
                 >
-                  <Text style={styles.confirmButtonText}>{editingAppointment ? 'Aktualisieren' : 'Erstellen'}</Text>
+                  <Text style={styles.confirmButtonText}>{editingAppointment ? 'Update' : 'Create'}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -720,7 +720,7 @@ export default function AppointmentsScreen() {
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Neuer Patient</Text>
+                <Text style={styles.modalTitle}>New Patient</Text>
                 <TouchableOpacity onPress={() => setShowNewPatientModal(false)}>
                   <X size={24} color="#8E8E93" />
                 </TouchableOpacity>
@@ -728,27 +728,27 @@ export default function AppointmentsScreen() {
 
               <ScrollView style={styles.modalScroll}>
                 <View style={styles.formGroup}>
-                  <Text style={styles.label}>Vorname *</Text>
+                  <Text style={styles.label}>First Name *</Text>
                   <TextInput
                     style={styles.input}
                     value={newPatient.firstName}
                     onChangeText={(text) => setNewPatient({ ...newPatient, firstName: text })}
-                    placeholder="Vorname eingeben"
+                    placeholder="Enter first name"
                   />
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.label}>Nachname *</Text>
+                  <Text style={styles.label}>Last Name *</Text>
                   <TextInput
                     style={styles.input}
                     value={newPatient.lastName}
                     onChangeText={(text) => setNewPatient({ ...newPatient, lastName: text })}
-                    placeholder="Nachname eingeben"
+                    placeholder="Enter last name"
                   />
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.label}>Geburtsdatum * (YYYY-MM-DD)</Text>
+                  <Text style={styles.label}>Date of Birth * (YYYY-MM-DD)</Text>
                   <TextInput
                     style={styles.input}
                     value={newPatient.dateOfBirth}
@@ -758,18 +758,18 @@ export default function AppointmentsScreen() {
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.label}>Telefonnummer *</Text>
+                  <Text style={styles.label}>Phone Number *</Text>
                   <TextInput
                     style={styles.input}
                     value={newPatient.contactNumber}
                     onChangeText={(text) => setNewPatient({ ...newPatient, contactNumber: text })}
-                    placeholder="+49 123 456789"
+                    placeholder="+1 555 123 4567"
                     keyboardType="phone-pad"
                   />
                 </View>
 
                 <View style={styles.formGroup}>
-                  <Text style={styles.label}>Geschlecht</Text>
+                  <Text style={styles.label}>Gender</Text>
                   <View style={styles.genderButtons}>
                     {(['male', 'female', 'other'] as const).map((gender) => (
                       <TouchableOpacity
@@ -786,7 +786,7 @@ export default function AppointmentsScreen() {
                             newPatient.gender === gender && styles.genderButtonTextActive,
                           ]}
                         >
-                          {gender === 'male' ? 'Männlich' : gender === 'female' ? 'Weiblich' : 'Divers'}
+                          {gender === 'male' ? 'Male' : gender === 'female' ? 'Female' : 'Other'}
                         </Text>
                       </TouchableOpacity>
                     ))}
@@ -799,13 +799,13 @@ export default function AppointmentsScreen() {
                   style={[styles.modalButton, styles.cancelButton]}
                   onPress={() => setShowNewPatientModal(false)}
                 >
-                  <Text style={styles.cancelButtonText}>Abbrechen</Text>
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.modalButton, styles.confirmButton]}
                   onPress={handleCreateNewPatient}
                 >
-                  <Text style={styles.confirmButtonText}>Erstellen</Text>
+                  <Text style={styles.confirmButtonText}>Create</Text>
                 </TouchableOpacity>
               </View>
             </View>
