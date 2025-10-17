@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { ScrollView, View, Text, StyleSheet, TextInput, TouchableOpacity, Modal, Alert } from 'react-native';
+import React, { useState, useEffect, useMemo } from 'react';
+import { ScrollView, View, Text, StyleSheet, TextInput, TouchableOpacity, Modal, Alert, FlatList } from 'react-native';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
-import { Search, Plus, Filter, X, Edit2, Trash2 } from 'lucide-react-native';
+import { Search, Plus, Filter, X, Edit2, Trash2, User } from 'lucide-react-native';
 import { PatientCard } from '@/components/PatientCard';
 import { useHospital } from '@/contexts/HospitalContext';
 import { Patient } from '@/types';
@@ -12,6 +12,7 @@ export default function PatientsScreen() {
   const { patients, addPatient, updatePatient, deletePatient } = useHospital();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<Patient['status'] | 'all'>('all');
+  const [viewMode, setViewMode] = useState<'all' | 'today' | 'week' | 'month'>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
@@ -27,16 +28,26 @@ export default function PatientsScreen() {
     status: 'outpatient' as Patient['status'],
   });
 
-  const filteredPatients = patients.filter(patient => {
-    const matchesSearch =
-      patient.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      patient.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      patient.mrn.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredAndSortedPatients = useMemo(() => {
+    let filtered = patients.filter(patient => {
+      const matchesSearch =
+        patient.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        patient.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        patient.mrn.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesFilter = filterStatus === 'all' || patient.status === filterStatus;
+      const matchesFilter = filterStatus === 'all' || patient.status === filterStatus;
 
-    return matchesSearch && matchesFilter;
-  });
+      return matchesSearch && matchesFilter;
+    });
+
+    filtered.sort((a, b) => {
+      const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
+      const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
+
+    return filtered;
+  }, [patients, searchQuery, filterStatus]);
 
   useEffect(() => {
     if (edit) {
@@ -63,19 +74,38 @@ export default function PatientsScreen() {
   }, [edit, patients]);
 
   const statusFilters: { label: string; value: Patient['status'] | 'all' }[] = [
-    { label: 'All', value: 'all' },
-    { label: 'Admitted', value: 'admitted' },
-    { label: 'Outpatient', value: 'outpatient' },
-    { label: 'Emergency', value: 'emergency' },
-    { label: 'Discharged', value: 'discharged' },
+    { label: 'Alle', value: 'all' },
+    { label: 'Stationär', value: 'admitted' },
+    { label: 'Ambulant', value: 'outpatient' },
+    { label: 'Notfall', value: 'emergency' },
+    { label: 'Entlassen', value: 'discharged' },
   ];
+
+  const groupedPatients = useMemo(() => {
+    const groups: { [key: string]: Patient[] } = {};
+    filteredAndSortedPatients.forEach(patient => {
+      const firstLetter = patient.lastName.charAt(0).toUpperCase();
+      if (!groups[firstLetter]) {
+        groups[firstLetter] = [];
+      }
+      groups[firstLetter].push(patient);
+    });
+    return groups;
+  }, [filteredAndSortedPatients]);
+
+  const patientSections = useMemo(() => {
+    return Object.keys(groupedPatients).sort().map(letter => ({
+      title: letter,
+      data: groupedPatients[letter],
+    }));
+  }, [groupedPatients]);
 
   return (
     <>
       <Stack.Screen
         options={{
-          title: 'Patients',
-          headerLargeTitle: true,
+          title: 'Patienten',
+          headerLargeTitle: false,
           headerRight: () => (
             <TouchableOpacity style={styles.addButton} onPress={() => setShowCreateModal(true)}>
               <Plus size={24} color="#007AFF" />
@@ -84,20 +114,39 @@ export default function PatientsScreen() {
         }}
       />
       <View style={styles.container}>
+        <View style={styles.viewModeContainer}>
+          {(['all', 'today', 'week', 'month'] as const).map((mode) => (
+            <TouchableOpacity
+              key={mode}
+              style={[
+                styles.viewModeButton,
+                viewMode === mode && styles.viewModeButtonActive,
+              ]}
+              onPress={() => setViewMode(mode)}
+            >
+              <Text
+                style={[
+                  styles.viewModeText,
+                  viewMode === mode && styles.viewModeTextActive,
+                ]}
+              >
+                {mode === 'all' ? 'Alle' : mode === 'today' ? 'Heute' : mode === 'week' ? 'Woche' : 'Monat'}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         <View style={styles.searchContainer}>
           <View style={styles.searchBar}>
             <Search size={20} color="#8E8E93" />
             <TextInput
               style={styles.searchInput}
-              placeholder="Search patients..."
+              placeholder="Patient suchen..."
               value={searchQuery}
               onChangeText={setSearchQuery}
               placeholderTextColor="#8E8E93"
             />
           </View>
-          <TouchableOpacity style={styles.filterButton}>
-            <Filter size={20} color="#007AFF" />
-          </TouchableOpacity>
         </View>
 
         <ScrollView
@@ -129,30 +178,55 @@ export default function PatientsScreen() {
 
         <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
           <Text style={styles.resultCount}>
-            {filteredPatients.length} {filteredPatients.length === 1 ? 'patient' : 'patients'}
+            {filteredAndSortedPatients.length} {filteredAndSortedPatients.length === 1 ? 'Patient' : 'Patienten'}
           </Text>
-          {filteredPatients.map(patient => (
-            <View key={patient.id} style={styles.patientCardContainer}>
-              <View
-                style={[
-                  styles.patientCardWrapper,
-                  selectedPatient?.id === patient.id && styles.patientCardSelected
-                ]}
-              >
+          {patientSections.map((section) => (
+            <View key={section.title}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>{section.title}</Text>
+              </View>
+              {section.data.map((patient) => (
                 <TouchableOpacity
+                  key={patient.id}
+                  style={[
+                    styles.patientItem,
+                    selectedPatient?.id === patient.id && styles.patientItemSelected,
+                  ]}
                   onPress={() => {
                     if (selectedPatient?.id === patient.id) {
-                      setSelectedPatient(null);
+                      router.push(`/patient-details/${patient.id}`);
                     } else {
                       setSelectedPatient(patient);
                     }
                   }}
-                  onLongPress={() => router.push(`/patient-details/${patient.id}`)}
                   activeOpacity={0.7}
                 >
-                  <PatientCard patient={patient} />
+                  <View style={styles.patientAvatar}>
+                    <User size={24} color="#007AFF" />
+                  </View>
+                  <View style={styles.patientInfo}>
+                    <Text style={styles.patientName}>
+                      {patient.firstName} {patient.lastName}
+                    </Text>
+                    <Text style={styles.patientDetails}>
+                      MRN: {patient.mrn} • {patient.gender === 'male' ? 'Männlich' : patient.gender === 'female' ? 'Weiblich' : 'Divers'}
+                    </Text>
+                  </View>
+                  <View style={[
+                    styles.statusBadge,
+                    patient.status === 'admitted' && styles.statusAdmitted,
+                    patient.status === 'outpatient' && styles.statusOutpatient,
+                    patient.status === 'emergency' && styles.statusEmergency,
+                    patient.status === 'discharged' && styles.statusDischarged,
+                  ]}>
+                    <Text style={styles.statusText}>
+                      {patient.status === 'admitted' ? 'Stationär' : 
+                       patient.status === 'outpatient' ? 'Ambulant' : 
+                       patient.status === 'emergency' ? 'Notfall' : 'Entlassen'}
+                    </Text>
+                  </View>
                 </TouchableOpacity>
-              </View>
+              ))}
             </View>
           ))}
         </ScrollView>
@@ -464,13 +538,38 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F2F2F7',
   },
-  searchContainer: {
+  viewModeContainer: {
     flexDirection: 'row',
-    padding: 16,
-    gap: 12,
+    backgroundColor: '#E5E5EA',
+    margin: 16,
+    padding: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  viewModeButton: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  viewModeButtonActive: {
+    backgroundColor: '#007AFF',
+  },
+  viewModeText: {
+    fontSize: 15,
+    fontWeight: '600' as const,
+    color: '#3C3C43',
+  },
+  viewModeTextActive: {
+    color: '#FFFFFF',
+  },
+  searchContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 12,
   },
   searchBar: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
@@ -484,14 +583,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#000000',
   },
-  filterButton: {
-    width: 44,
-    height: 44,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+
   filterScroll: {
     maxHeight: 50,
   },
@@ -528,7 +620,75 @@ const styles = StyleSheet.create({
   resultCount: {
     fontSize: 14,
     color: '#8E8E93',
-    marginBottom: 12,
+    marginBottom: 16,
+    fontWeight: '500' as const,
+  },
+  sectionHeader: {
+    backgroundColor: '#F2F2F7',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    marginTop: 8,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: '#007AFF',
+  },
+  patientItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    padding: 14,
+    marginBottom: 8,
+    borderRadius: 12,
+    gap: 12,
+  },
+  patientItemSelected: {
+    borderWidth: 2,
+    borderColor: '#007AFF',
+  },
+  patientAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#E5F3FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  patientInfo: {
+    flex: 1,
+  },
+  patientName: {
+    fontSize: 16,
+    fontWeight: '600' as const,
+    color: '#000000',
+    marginBottom: 4,
+  },
+  patientDetails: {
+    fontSize: 13,
+    color: '#8E8E93',
+  },
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusAdmitted: {
+    backgroundColor: '#E8F5E9',
+  },
+  statusOutpatient: {
+    backgroundColor: '#E3F2FD',
+  },
+  statusEmergency: {
+    backgroundColor: '#FFEBEE',
+  },
+  statusDischarged: {
+    backgroundColor: '#F5F5F5',
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: '600' as const,
+    color: '#000000',
   },
   addButton: {
     marginRight: 8,
