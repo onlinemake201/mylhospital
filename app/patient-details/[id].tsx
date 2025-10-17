@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { PatientVisit, PatientFile } from '@/types';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system';
+
 
 export default function PatientDetailsScreen() {
   const { id } = useLocalSearchParams();
@@ -67,7 +67,7 @@ export default function PatientDetailsScreen() {
   if (!patient) {
     return (
       <View style={styles.container}>
-        <Text>Patient nicht gefunden</Text>
+        <Text>Patient not found</Text>
       </View>
     );
   }
@@ -86,7 +86,7 @@ export default function PatientDetailsScreen() {
 
   const handleAddVisit = () => {
     if (!newVisit.chiefComplaint || !newVisit.diagnosis || !newVisit.treatment) {
-      Alert.alert('Fehler', 'Bitte alle Pflichtfelder ausfüllen');
+      Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
 
@@ -117,7 +117,7 @@ export default function PatientDetailsScreen() {
       notes: '',
       category: 'consultation',
     });
-    Alert.alert('Erfolg', 'Besuch erfolgreich hinzugefügt');
+    Alert.alert('Success', 'Visit added successfully');
   };
 
   const handlePickDocument = async () => {
@@ -138,7 +138,7 @@ export default function PatientDetailsScreen() {
       }
     } catch (error) {
       console.error('Error picking document:', error);
-      Alert.alert('Fehler', 'Datei konnte nicht ausgewählt werden');
+      Alert.alert('Error', 'Could not select file');
     }
   };
 
@@ -161,13 +161,13 @@ export default function PatientDetailsScreen() {
       }
     } catch (error) {
       console.error('Error picking image:', error);
-      Alert.alert('Fehler', 'Bild konnte nicht ausgewählt werden');
+      Alert.alert('Error', 'Could not select image');
     }
   };
 
   const handleUploadFile = () => {
     if (!newFile.name || !newFile.uri) {
-      Alert.alert('Fehler', 'Bitte eine Datei auswählen');
+      Alert.alert('Error', 'Please select a file');
       return;
     }
 
@@ -192,7 +192,7 @@ export default function PatientDetailsScreen() {
       uri: '',
       type: 'document',
     });
-    Alert.alert('Erfolg', 'Datei erfolgreich hochgeladen');
+    Alert.alert('Success', 'File uploaded successfully');
   };
 
   const lastVisit = visits[0];
@@ -218,17 +218,17 @@ export default function PatientDetailsScreen() {
               <TouchableOpacity 
                 onPress={() => {
                   Alert.alert(
-                    'Patient löschen',
-                    `Möchten Sie ${patient.firstName} ${patient.lastName} wirklich löschen?`,
+                    'Delete Patient',
+                    `Do you really want to delete ${patient.firstName} ${patient.lastName}?`,
                     [
-                      { text: 'Abbrechen', style: 'cancel' },
+                      { text: 'Cancel', style: 'cancel' },
                       {
-                        text: 'Löschen',
+                        text: 'Delete',
                         style: 'destructive',
                         onPress: () => {
                           router.back();
                           setTimeout(() => {
-                            Alert.alert('Erfolg', 'Patient gelöscht');
+                            Alert.alert('Success', 'Patient deleted');
                           }, 100);
                         },
                       },
@@ -255,32 +255,32 @@ export default function PatientDetailsScreen() {
           
           <View style={styles.infoGrid}>
             <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Geburtsdatum</Text>
+              <Text style={styles.infoLabel}>Date of Birth</Text>
               <Text style={styles.infoValue}>{patient.dateOfBirth}</Text>
             </View>
             <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Geschlecht</Text>
+              <Text style={styles.infoLabel}>Gender</Text>
               <Text style={styles.infoValue}>
-                {patient.gender === 'male' ? 'Männlich' : patient.gender === 'female' ? 'Weiblich' : 'Divers'}
+                {patient.gender === 'male' ? 'Male' : patient.gender === 'female' ? 'Female' : 'Other'}
               </Text>
             </View>
             <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Blutgruppe</Text>
+              <Text style={styles.infoLabel}>Blood Type</Text>
               <Text style={styles.infoValue}>{patient.bloodType || 'N/A'}</Text>
             </View>
             <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Allergien</Text>
+              <Text style={styles.infoLabel}>Allergies</Text>
               <Text style={styles.infoValue}>
-                {patient.allergies.length > 0 ? patient.allergies.join(', ') : 'Keine'}
+                {patient.allergies.length > 0 ? patient.allergies.join(', ') : 'None'}
               </Text>
             </View>
           </View>
 
           {lastVisit && (
             <View style={styles.lastVisitSection}>
-              <Text style={styles.lastVisitTitle}>Letzter Besuch</Text>
+              <Text style={styles.lastVisitTitle}>Last Visit</Text>
               <Text style={styles.lastVisitDate}>
-                {lastVisit.date} um {lastVisit.time} • {lastVisit.doctorName}
+                {lastVisit.date} at {lastVisit.time} • {lastVisit.doctorName}
               </Text>
               <Text style={styles.lastVisitDiagnosis}>{lastVisit.diagnosis}</Text>
             </View>
@@ -294,20 +294,20 @@ export default function PatientDetailsScreen() {
               onPress={() => setShowAddVisit(true)}
             >
               <FileText size={20} color="#007AFF" />
-              <Text style={styles.actionButtonText}>Besuch hinzufügen</Text>
+              <Text style={styles.actionButtonText}>Add Visit</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.actionButton}
               onPress={() => setShowUploadFile(true)}
             >
               <Upload size={20} color="#007AFF" />
-              <Text style={styles.actionButtonText}>Datei hochladen</Text>
+              <Text style={styles.actionButtonText}>Upload File</Text>
             </TouchableOpacity>
           </View>
         )}
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Behandlungsverlauf</Text>
+          <Text style={styles.sectionTitle}>Treatment History</Text>
           
           <ScrollView
             horizontal
@@ -330,10 +330,10 @@ export default function PatientDetailsScreen() {
                     selectedCategory === cat && styles.categoryChipTextActive,
                   ]}
                 >
-                  {cat === 'all' ? 'Alle' : 
-                   cat === 'consultation' ? 'Konsultation' :
-                   cat === 'follow_up' ? 'Nachsorge' :
-                   cat === 'emergency' ? 'Notfall' : 'Eingriff'}
+                  {cat === 'all' ? 'All' : 
+                   cat === 'consultation' ? 'Consultation' :
+                   cat === 'follow_up' ? 'Follow-up' :
+                   cat === 'emergency' ? 'Emergency' : 'Procedure'}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -354,9 +354,9 @@ export default function PatientDetailsScreen() {
                   <View style={styles.visitHeaderRight}>
                     <Badge 
                       label={
-                        visit.category === 'consultation' ? 'Konsultation' :
-                        visit.category === 'follow_up' ? 'Nachsorge' :
-                        visit.category === 'emergency' ? 'Notfall' : 'Eingriff'
+                        visit.category === 'consultation' ? 'Consultation' :
+                        visit.category === 'follow_up' ? 'Follow-up' :
+                        visit.category === 'emergency' ? 'Emergency' : 'Procedure'
                       } 
                       variant="info" 
                     />
@@ -372,20 +372,20 @@ export default function PatientDetailsScreen() {
               {expandedVisit === visit.id && (
                 <View style={styles.visitDetails}>
                   <View style={styles.visitDetailItem}>
-                    <Text style={styles.visitDetailLabel}>Beschwerde:</Text>
+                    <Text style={styles.visitDetailLabel}>Chief Complaint:</Text>
                     <Text style={styles.visitDetailText}>{visit.chiefComplaint}</Text>
                   </View>
                   <View style={styles.visitDetailItem}>
-                    <Text style={styles.visitDetailLabel}>Diagnose:</Text>
+                    <Text style={styles.visitDetailLabel}>Diagnosis:</Text>
                     <Text style={styles.visitDetailText}>{visit.diagnosis}</Text>
                   </View>
                   <View style={styles.visitDetailItem}>
-                    <Text style={styles.visitDetailLabel}>Behandlung:</Text>
+                    <Text style={styles.visitDetailLabel}>Treatment:</Text>
                     <Text style={styles.visitDetailText}>{visit.treatment}</Text>
                   </View>
                   {visit.prescriptions && visit.prescriptions.length > 0 && (
                     <View style={styles.visitDetailItem}>
-                      <Text style={styles.visitDetailLabel}>Verschreibungen:</Text>
+                      <Text style={styles.visitDetailLabel}>Prescriptions:</Text>
                       {visit.prescriptions.map((p: string, i: number) => (
                         <Text key={i} style={styles.visitDetailText}>• {p}</Text>
                       ))}
@@ -393,7 +393,7 @@ export default function PatientDetailsScreen() {
                   )}
                   {visit.notes && (
                     <View style={styles.visitDetailItem}>
-                      <Text style={styles.visitDetailLabel}>Notizen:</Text>
+                      <Text style={styles.visitDetailLabel}>Notes:</Text>
                       <Text style={styles.visitDetailText}>{visit.notes}</Text>
                     </View>
                   )}
@@ -405,13 +405,13 @@ export default function PatientDetailsScreen() {
           {filteredVisits.length === 0 && (
             <Card style={styles.emptyCard}>
               <Calendar size={48} color="#8E8E93" />
-              <Text style={styles.emptyText}>Keine Besuche gefunden</Text>
+              <Text style={styles.emptyText}>No visits found</Text>
             </Card>
           )}
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Dateien & Dokumente</Text>
+          <Text style={styles.sectionTitle}>Files & Documents</Text>
           
           {Object.entries(groupedFiles).map(([category, categoryFiles]) => {
             if (categoryFiles.length === 0) return null;
@@ -419,10 +419,10 @@ export default function PatientDetailsScreen() {
             return (
               <View key={category} style={styles.fileCategory}>
                 <Text style={styles.fileCategoryTitle}>
-                  {category === 'report' ? 'Berichte' :
-                   category === 'lab' ? 'Laborbefunde' :
-                   category === 'imaging' ? 'Bildgebung' :
-                   category === 'prescription' ? 'Rezepte' : 'Sonstiges'}
+                  {category === 'report' ? 'Reports' :
+                   category === 'lab' ? 'Lab Results' :
+                   category === 'imaging' ? 'Imaging' :
+                   category === 'prescription' ? 'Prescriptions' : 'Other'}
                 </Text>
                 {categoryFiles.map(file => (
                   <Card key={file.id} style={styles.fileCard}>
@@ -447,7 +447,7 @@ export default function PatientDetailsScreen() {
           {files.length === 0 && (
             <Card style={styles.emptyCard}>
               <FileText size={48} color="#8E8E93" />
-              <Text style={styles.emptyText}>Keine Dateien vorhanden</Text>
+              <Text style={styles.emptyText}>No files available</Text>
             </Card>
           )}
         </View>
@@ -462,7 +462,7 @@ export default function PatientDetailsScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Besuch hinzufügen</Text>
+              <Text style={styles.modalTitle}>Add Visit</Text>
               <TouchableOpacity onPress={() => setShowAddVisit(false)}>
                 <X size={24} color="#8E8E93" />
               </TouchableOpacity>
@@ -470,7 +470,7 @@ export default function PatientDetailsScreen() {
 
             <ScrollView style={styles.modalScroll}>
               <View style={styles.formGroup}>
-                <Text style={styles.label}>Datum *</Text>
+                <Text style={styles.label}>Date *</Text>
                 <TextInput
                   style={styles.input}
                   value={newVisit.date}
@@ -480,7 +480,7 @@ export default function PatientDetailsScreen() {
               </View>
 
               <View style={styles.formGroup}>
-                <Text style={styles.label}>Zeit *</Text>
+                <Text style={styles.label}>Time *</Text>
                 <TextInput
                   style={styles.input}
                   value={newVisit.time}
@@ -490,7 +490,7 @@ export default function PatientDetailsScreen() {
               </View>
 
               <View style={styles.formGroup}>
-                <Text style={styles.label}>Kategorie</Text>
+                <Text style={styles.label}>Category</Text>
                 <View style={styles.categoryButtons}>
                   {(['consultation', 'follow_up', 'emergency', 'procedure'] as const).map((cat) => (
                     <TouchableOpacity
@@ -507,9 +507,9 @@ export default function PatientDetailsScreen() {
                           newVisit.category === cat && styles.categoryButtonTextActive,
                         ]}
                       >
-                        {cat === 'consultation' ? 'Konsultation' :
-                         cat === 'follow_up' ? 'Nachsorge' :
-                         cat === 'emergency' ? 'Notfall' : 'Eingriff'}
+                        {cat === 'consultation' ? 'Consultation' :
+                         cat === 'follow_up' ? 'Follow-up' :
+                         cat === 'emergency' ? 'Emergency' : 'Procedure'}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -517,58 +517,58 @@ export default function PatientDetailsScreen() {
               </View>
 
               <View style={styles.formGroup}>
-                <Text style={styles.label}>Hauptbeschwerde *</Text>
+                <Text style={styles.label}>Chief Complaint *</Text>
                 <TextInput
                   style={[styles.input, styles.textArea]}
                   value={newVisit.chiefComplaint}
                   onChangeText={(text) => setNewVisit({ ...newVisit, chiefComplaint: text })}
-                  placeholder="Beschreiben Sie die Hauptbeschwerde"
+                  placeholder="Describe the chief complaint"
                   multiline
                   numberOfLines={3}
                 />
               </View>
 
               <View style={styles.formGroup}>
-                <Text style={styles.label}>Diagnose *</Text>
+                <Text style={styles.label}>Diagnosis *</Text>
                 <TextInput
                   style={[styles.input, styles.textArea]}
                   value={newVisit.diagnosis}
                   onChangeText={(text) => setNewVisit({ ...newVisit, diagnosis: text })}
-                  placeholder="Diagnose eingeben"
+                  placeholder="Enter diagnosis"
                   multiline
                   numberOfLines={3}
                 />
               </View>
 
               <View style={styles.formGroup}>
-                <Text style={styles.label}>Behandlung *</Text>
+                <Text style={styles.label}>Treatment *</Text>
                 <TextInput
                   style={[styles.input, styles.textArea]}
                   value={newVisit.treatment}
                   onChangeText={(text) => setNewVisit({ ...newVisit, treatment: text })}
-                  placeholder="Behandlung beschreiben"
+                  placeholder="Describe treatment"
                   multiline
                   numberOfLines={3}
                 />
               </View>
 
               <View style={styles.formGroup}>
-                <Text style={styles.label}>Verschreibungen (kommagetrennt)</Text>
+                <Text style={styles.label}>Prescriptions (comma separated)</Text>
                 <TextInput
                   style={styles.input}
                   value={newVisit.prescriptions}
                   onChangeText={(text) => setNewVisit({ ...newVisit, prescriptions: text })}
-                  placeholder="Medikament 1, Medikament 2"
+                  placeholder="Medication 1, Medication 2"
                 />
               </View>
 
               <View style={styles.formGroup}>
-                <Text style={styles.label}>Notizen</Text>
+                <Text style={styles.label}>Notes</Text>
                 <TextInput
                   style={[styles.input, styles.textArea]}
                   value={newVisit.notes}
                   onChangeText={(text) => setNewVisit({ ...newVisit, notes: text })}
-                  placeholder="Zusätzliche Notizen"
+                  placeholder="Additional notes"
                   multiline
                   numberOfLines={3}
                 />
@@ -580,13 +580,13 @@ export default function PatientDetailsScreen() {
                 style={[styles.modalButton, styles.cancelButton]}
                 onPress={() => setShowAddVisit(false)}
               >
-                <Text style={styles.cancelButtonText}>Abbrechen</Text>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, styles.confirmButton]}
                 onPress={handleAddVisit}
               >
-                <Text style={styles.confirmButtonText}>Hinzufügen</Text>
+                <Text style={styles.confirmButtonText}>Add</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -602,7 +602,7 @@ export default function PatientDetailsScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Datei hochladen</Text>
+              <Text style={styles.modalTitle}>Upload File</Text>
               <TouchableOpacity onPress={() => setShowUploadFile(false)}>
                 <X size={24} color="#8E8E93" />
               </TouchableOpacity>
@@ -615,14 +615,14 @@ export default function PatientDetailsScreen() {
                   onPress={handlePickDocument}
                 >
                   <FileText size={24} color="#007AFF" />
-                  <Text style={styles.uploadButtonText}>Dokument wählen</Text>
+                  <Text style={styles.uploadButtonText}>Choose Document</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.uploadButton}
                   onPress={handlePickImage}
                 >
                   <FileImage size={24} color="#007AFF" />
-                  <Text style={styles.uploadButtonText}>Bild wählen</Text>
+                  <Text style={styles.uploadButtonText}>Choose Image</Text>
                 </TouchableOpacity>
               </View>
 
@@ -633,7 +633,7 @@ export default function PatientDetailsScreen() {
               )}
 
               <View style={styles.formGroup}>
-                <Text style={styles.label}>Kategorie</Text>
+                <Text style={styles.label}>Category</Text>
                 <View style={styles.categoryButtons}>
                   {fileCategories.map((cat) => (
                     <TouchableOpacity
@@ -650,10 +650,10 @@ export default function PatientDetailsScreen() {
                           newFile.category === cat && styles.categoryButtonTextActive,
                         ]}
                       >
-                        {cat === 'report' ? 'Bericht' :
-                         cat === 'lab' ? 'Labor' :
-                         cat === 'imaging' ? 'Bildgebung' :
-                         cat === 'prescription' ? 'Rezept' : 'Sonstiges'}
+                        {cat === 'report' ? 'Report' :
+                         cat === 'lab' ? 'Lab' :
+                         cat === 'imaging' ? 'Imaging' :
+                         cat === 'prescription' ? 'Prescription' : 'Other'}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -661,12 +661,12 @@ export default function PatientDetailsScreen() {
               </View>
 
               <View style={styles.formGroup}>
-                <Text style={styles.label}>Notizen</Text>
+                <Text style={styles.label}>Notes</Text>
                 <TextInput
                   style={[styles.input, styles.textArea]}
                   value={newFile.notes}
                   onChangeText={(text) => setNewFile({ ...newFile, notes: text })}
-                  placeholder="Zusätzliche Informationen"
+                  placeholder="Additional information"
                   multiline
                   numberOfLines={3}
                 />
@@ -678,13 +678,13 @@ export default function PatientDetailsScreen() {
                 style={[styles.modalButton, styles.cancelButton]}
                 onPress={() => setShowUploadFile(false)}
               >
-                <Text style={styles.cancelButtonText}>Abbrechen</Text>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.modalButton, styles.confirmButton]}
                 onPress={handleUploadFile}
               >
-                <Text style={styles.confirmButtonText}>Hochladen</Text>
+                <Text style={styles.confirmButtonText}>Upload</Text>
               </TouchableOpacity>
             </View>
           </View>
