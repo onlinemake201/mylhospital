@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ScrollView, View, Text, StyleSheet, TextInput, TouchableOpacity, Modal, Alert, FlatList } from 'react-native';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
-import { Search, Plus, X, Edit2, Trash2, ArrowUpDown } from 'lucide-react-native';
-import { PatientCard } from '@/components/PatientCard';
+import { Search, Plus, X, Edit2, Trash2, ArrowUpDown, AlertCircle } from 'lucide-react-native';
+
 import { useHospital } from '@/contexts/HospitalContext';
 import { Patient } from '@/types';
 
@@ -27,6 +27,47 @@ export default function PatientsScreen() {
     allergies: '',
     status: 'outpatient' as Patient['status'],
   });
+
+  const getStatusColor = (status: Patient['status']) => {
+    switch (status) {
+      case 'admitted':
+        return '#007AFF';
+      case 'emergency':
+        return '#FF3B30';
+      case 'outpatient':
+        return '#34C759';
+      case 'discharged':
+        return '#8E8E93';
+      default:
+        return '#8E8E93';
+    }
+  };
+
+  const getStatusLabel = (status: Patient['status']) => {
+    switch (status) {
+      case 'admitted':
+        return 'ADMITTED';
+      case 'emergency':
+        return 'EMERGENCY';
+      case 'outpatient':
+        return 'OUTPATIENT';
+      case 'discharged':
+        return 'DISCHARGED';
+      default:
+        return 'UNKNOWN';
+    }
+  };
+
+  const calculateAge = (dob: string) => {
+    const today = new Date();
+    const birthDate = new Date(dob);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
 
   const filteredAndSortedPatients = useMemo(() => {
     let filtered = patients.filter(patient => {
@@ -194,26 +235,52 @@ export default function PatientsScreen() {
           keyExtractor={(item) => item.id}
           style={styles.list}
           contentContainerStyle={styles.listContent}
-          numColumns={2}
-          columnWrapperStyle={styles.columnWrapper}
-          key="two-column"
           renderItem={({ item: patient }) => (
             <TouchableOpacity
               style={[
-                styles.gridCard,
-                selectedPatient?.id === patient.id && styles.gridCardSelected
+                styles.listItem,
+                selectedPatient?.id === patient.id && styles.listItemSelected
               ]}
-              onPress={() => {
-                if (selectedPatient?.id === patient.id) {
-                  setSelectedPatient(null);
-                } else {
-                  setSelectedPatient(patient);
-                }
-              }}
-              onLongPress={() => router.push(`/patient-details/${patient.id}`)}
+              onPress={() => router.push(`/patient-details/${patient.id}`)}
               activeOpacity={0.7}
             >
-              <PatientCard patient={patient} compact />
+              <View style={styles.listItemAvatar}>
+                <Text style={styles.listItemAvatarText}>
+                  {patient.firstName[0]}{patient.lastName[0]}
+                </Text>
+              </View>
+              
+              <View style={styles.listItemContent}>
+                <View style={styles.listItemHeader}>
+                  <Text style={styles.listItemName}>
+                    {patient.firstName} {patient.lastName}
+                  </Text>
+                  <View style={[styles.listItemBadge, { backgroundColor: getStatusColor(patient.status) }]}>
+                    <Text style={styles.listItemBadgeText}>{getStatusLabel(patient.status)}</Text>
+                  </View>
+                </View>
+                
+                <View style={styles.listItemDetails}>
+                  <Text style={styles.listItemMrn}>{patient.mrn}</Text>
+                  <Text style={styles.listItemSeparator}>•</Text>
+                  <Text style={styles.listItemAge}>Age {calculateAge(patient.dateOfBirth)}</Text>
+                  {patient.bloodType && (
+                    <>
+                      <Text style={styles.listItemSeparator}>•</Text>
+                      <Text style={styles.listItemBlood}>{patient.bloodType}</Text>
+                    </>
+                  )}
+                </View>
+                
+                {patient.allergies.length > 0 && (
+                  <View style={styles.listItemAllergies}>
+                    <AlertCircle size={12} color="#FF3B30" />
+                    <Text style={styles.listItemAllergyText} numberOfLines={1}>
+                      {patient.allergies.join(', ')}
+                    </Text>
+                  </View>
+                )}
+              </View>
             </TouchableOpacity>
           )}
         />
@@ -585,7 +652,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#F2F2F7',
   },
   listContent: {
-    padding: 12,
     paddingBottom: 100,
   },
   resultHeader: {
@@ -603,24 +669,94 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 4,
   },
-  gridCard: {
-    flex: 1,
-    marginBottom: 8,
-    borderRadius: 16,
-    overflow: 'hidden',
+  listItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#E5E5EA',
   },
-  gridCardSelected: {
-    borderWidth: 2.5,
-    borderColor: '#007AFF',
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 6,
+  listItemSelected: {
+    backgroundColor: '#E5F3FF',
+  },
+  listItemAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#007AFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  listItemAvatarText: {
+    fontSize: 18,
+    fontWeight: '700' as const,
+    color: '#FFFFFF',
+  },
+  listItemContent: {
+    flex: 1,
+  },
+  listItemHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  listItemName: {
+    fontSize: 17,
+    fontWeight: '600' as const,
+    color: '#000000',
+    flex: 1,
+  },
+  listItemBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    marginLeft: 8,
+  },
+  listItemBadgeText: {
+    fontSize: 9,
+    fontWeight: '700' as const,
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
+  },
+  listItemDetails: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  listItemMrn: {
+    fontSize: 13,
+    color: '#8E8E93',
+    fontWeight: '500' as const,
+  },
+  listItemSeparator: {
+    fontSize: 13,
+    color: '#8E8E93',
+    marginHorizontal: 6,
+  },
+  listItemAge: {
+    fontSize: 13,
+    color: '#3C3C43',
+  },
+  listItemBlood: {
+    fontSize: 13,
+    fontWeight: '600' as const,
+    color: '#007AFF',
+  },
+  listItemAllergies: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 2,
+  },
+  listItemAllergyText: {
+    fontSize: 12,
+    color: '#FF3B30',
+    fontWeight: '500' as const,
+    flex: 1,
   },
   sortContainer: {
     flexDirection: 'row',
